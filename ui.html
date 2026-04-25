@@ -1,0 +1,159 @@
+<!
+<meta charset="UTF-8"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: Inter, sans-serif; }
+body { background: #f5f5f5; padding: 16px; }
+h2 { font-size: 15px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+.sub { font-size: 12px; color: #888; margin-bottom: 16px; line-height: 1.5; }
+.screens-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.screen-item {
+  display: flex; align-items: center; gap: 10px;
+  background: #fff; border-radius: 10px;
+  padding: 10px 12px; border: 1.5px solid #eee; cursor: pointer;
+}
+.screen-item input[type="checkbox"] { accent-color: #1a1a1a; width: 15px; height: 15px; flex-shrink: 0; }
+.screen-icon { font-size: 18px; flex-shrink: 0; }
+.screen-info { flex: 1; }
+.screen-name { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+.screen-desc { font-size: 11px; color: #999; margin-top: 1px; }
+.actions { display: flex; gap: 8px; margin-bottom: 10px; }
+.btn-all { flex: 1; padding: 8px; border: 1.5px solid #ddd; background: #fff; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; color: #333; }
+.btn-import { flex: 2; padding: 10px; background: #1a1a1a; color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.btn-import:disabled { opacity: .35; cursor: not-allowed; }
+.options { background: #fff; border-radius: 10px; padding: 12px; border: 1.5px solid #eee; margin-bottom: 14px; }
+.options-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+.opt-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.opt-row:last-child { margin-bottom: 0; }
+.opt-label { font-size: 12px; color: #444; font-weight: 500; }
+.opt-row select { padding: 5px 8px; border: 1.5px solid #e0e0e0; border-radius: 7px; font-size: 12px; }
+.opt-row input[type="number"] { padding: 5px 8px; border: 1.5px solid #e0e0e0; border-radius: 7px; font-size: 12px; width: 70px; }
+.progress-wrap { display: none; margin-bottom: 10px; }
+.progress-bar { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: #c9f542; border-radius: 3px; transition: width .3s; width: 0%; }
+.progress-label { font-size: 11px; color: #888; margin-top: 4px; text-align: center; }
+.status { font-size: 12px; color: #666; text-align: center; min-height: 18px; padding: 4px; }
+.status.success { color: #22c55e; font-weight: 600; }
+.status.error { color: #ff4444; font-weight: 600; 
+<body>}
+</style>
+</head>
+
+<h2>ReMatch — Импорт экранов</h2>
+<p class="sub">Android 360×800, без рамки телефона</p>
+
+<div class="options">
+  <div class="options-title">Настройки</div>
+  <div class="opt-row">
+    <span class="opt-label">Расположение</span>
+    <select id="layout">
+      <option value="horizontal">Горизонтально</option>
+      <option value="grid">Сетка (4 в ряд)</option>
+      <option value="vertical">Вертикально</option>
+    </select>
+  </div>
+  <div class="opt-row">
+    <span class="opt-label">Отступ между экранами</span>
+    <input type="number" id="gap" value="80" min="20" max="400"/>
+  </div>
+</div>
+
+<div class="screens-list" id="screensList"></div>
+
+<div class="actions">
+  <button class="btn-all" onclick="toggleAll()">Выбрать все</button>
+  <button class="btn-import" id="btnImport" onclick="startImport()">Создать фреймы →</button>
+</div>
+
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-label" id="progressLabel">Создание...</div>
+</div>
+<div class="status" id="status"></div>
+
+<script>
+var SCREENS = [
+  { id:'ui_kit',     name:'00 UI Kit',              desc:'Цвета, типографика, компоненты',   icon:'🎨' },
+  { id:'splash',     name:'01 Сплэш',               desc:'Светлый приветственный экран',      icon:'🌅' },
+  { id:'style_scan', name:'02a Скандинавский',      desc:'Свайп-карточка стиля',              icon:'🪵' },
+  { id:'style_min',  name:'02b Минимализм',         desc:'Свайп-карточка стиля',              icon:'⬜' },
+  { id:'style_loft', name:'02c Лофт',               desc:'Свайп-карточка стиля',              icon:'🏭' },
+  { id:'style_mod',  name:'02d Современный',        desc:'Свайп-карточка стиля',              icon:'🔷' },
+  { id:'style_class',name:'02e Классика',           desc:'Свайп-карточка стиля',              icon:'🏛' },
+  { id:'style_eco',  name:'02f Эко / Бохо',         desc:'Свайп-карточка стиля',              icon:'🌿' },
+  { id:'style_japdi',name:'02g Japandi',            desc:'Свайп-карточка стиля',              icon:'🎋' },
+  { id:'style_art',  name:'02h Арт-деко',           desc:'Свайп-карточка стиля',              icon:'✨' },
+  { id:'behavior',   name:'03 Поведение',           desc:'Как клиент принимает решения',      icon:'🧠' },
+  { id:'budget',     name:'04 Бюджет',              desc:'Диапазон бюджета',                  icon:'💰' },
+  { id:'area',       name:'05 Площадь',             desc:'Площадь квартиры',                  icon:'📐' },
+  { id:'features',   name:'06 Критерии',            desc:'Важные параметры интерьера',        icon:'⭐' },
+  { id:'result',     name:'07 Результат',           desc:'Карточки подобранных мастеров',     icon:'🏆' }
+];
+
+var allSelected = true;
+
+function renderList() {
+  var list = document.getElementById('screensList');
+  var html = '';
+  for (var i = 0; i < SCREENS.length; i++) {
+    var sc = SCREENS[i];
+    html += '<label class="screen-item">'
+      + '<input type="checkbox" class="sc-check" value="' + sc.id + '" checked />'
+      + '<span class="screen-icon">' + sc.icon + '</span>'
+      + '<div class="screen-info">'
+      + '<div class="screen-name">' + sc.name + '</div>'
+      + '<div class="screen-desc">' + sc.desc + '</div>'
+      + '</div></label>';
+  }
+  list.innerHTML = html;
+}
+
+function toggleAll() {
+  allSelected = !allSelected;
+  var cbs = document.querySelectorAll('.sc-check');
+  for (var i = 0; i < cbs.length; i++) { cbs[i].checked = allSelected; }
+}
+
+function setStatus(txt, type) {
+  var s = document.getElementById('status');
+  s.textContent = txt;
+  s.className = 'status ' + (type || '');
+}
+
+function setProgress(pct, label) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+function startImport() {
+  var checked = [];
+  var cbs = document.querySelectorAll('.sc-check:checked');
+  for (var i = 0; i < cbs.length; i++) { checked.push(cbs[i].value); }
+  if (checked.length === 0) { setStatus('Выберите хотя бы один экран', 'error'); return; }
+  var layout = document.getElementById('layout').value;
+  var gap    = parseInt(document.getElementById('gap').value) || 80;
+  document.getElementById('btnImport').disabled = true;
+  document.getElementById('progressWrap').style.display = 'block';
+  setProgress(0, 'Начинаем...');
+  setStatus('');
+  parent.postMessage({ pluginMessage: { type:'create-screens', screens:checked, layout:layout, gap:gap } }, '*');
+}
+
+window.onmessage = function(event) {
+  var msg = event.data.pluginMessage;
+  if (!msg) return;
+  if (msg.type === 'progress') { setProgress(msg.pct, msg.label); }
+  if (msg.type === 'done') {
+    setProgress(100, 'Готово!');
+    setStatus('✅ Создано: ' + msg.count, 'success');
+    document.getElementById('btnImport').disabled = false;
+  }
+  if (msg.type === 'error') {
+    setStatus('❌ ' + msg.message, 'error');
+    document.getElementById('btnImport').disabled = false;
+  }
+};
+
+renderList();
+</script>
+</body>
+</html>
