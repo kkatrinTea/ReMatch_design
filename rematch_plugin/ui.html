@@ -6,37 +6,44 @@
 *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,sans-serif}
 body{background:#f2eeea;padding:16px}
 h2{font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:4px}
-.sub{font-size:11px;color:#888;margin-bottom:14px;line-height:1.5}
-.screens-list{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
-.screen-item{display:flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:9px 12px;border:1.5px solid #eee;cursor:pointer}
-.screen-item input[type=checkbox]{accent-color:#1a1a1a;width:15px;height:15px;flex-shrink:0}
-.screen-icon{font-size:16px;flex-shrink:0}
+.sub{font-size:10px;color:#888;margin-bottom:12px;line-height:1.5}
+.hint{background:#fff8e0;border:1px solid #f0d060;border-radius:8px;padding:8px 12px;font-size:10px;color:#7a6000;margin-bottom:12px;line-height:1.8}
+.screens-list{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;max-height:360px;overflow-y:auto}
+.screen-item{display:flex;align-items:center;gap:10px;background:#fff;border-radius:9px;padding:8px 12px;border:1.5px solid #eee;cursor:pointer}
+.screen-item input[type=checkbox]{accent-color:#1a1a1a;width:14px;height:14px;flex-shrink:0}
+.screen-icon{font-size:15px;flex-shrink:0}
 .screen-info{flex:1}
-.screen-name{font-size:12px;font-weight:600;color:#1a1a1a}
-.screen-desc{font-size:10px;color:#999;margin-top:1px}
-.options{background:#fff;border-radius:10px;padding:12px;border:1.5px solid #eee;margin-bottom:12px}
-.options-title{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
-.opt-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.screen-name{font-size:11px;font-weight:600;color:#1a1a1a}
+.screen-desc{font-size:9px;color:#999;margin-top:1px}
+.options{background:#fff;border-radius:10px;padding:12px;border:1.5px solid #eee;margin-bottom:10px}
+.options-title{font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.opt-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
 .opt-row:last-child{margin-bottom:0}
-.opt-label{font-size:11px;color:#444;font-weight:500}
-.opt-row select,.opt-row input[type=number]{padding:5px 8px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:11px}
+.opt-label{font-size:10px;color:#444;font-weight:500}
+.opt-row select,.opt-row input[type=number]{padding:5px 8px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:10px}
 .opt-row input[type=number]{width:70px}
 .actions{display:flex;gap:8px;margin-bottom:10px}
-.btn-all{flex:1;padding:8px;border:1.5px solid #ddd;background:#fff;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;color:#333}
+.btn-all{flex:1;padding:8px;border:1.5px solid #ddd;background:#fff;border-radius:8px;font-size:10px;font-weight:600;cursor:pointer;color:#333}
 .btn-import{flex:2;padding:10px;background:#1a1a1a;color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer}
 .btn-import:disabled{opacity:.35;cursor:not-allowed}
 .progress-wrap{display:none;margin-bottom:10px}
 .progress-bar{height:5px;background:#eee;border-radius:3px;overflow:hidden}
 .progress-fill{height:100%;background:#c9f542;border-radius:3px;transition:width 
 <body>.3s;width:0%}
-.progress-label{font-size:10px;color:#888;margin-top:4px;text-align:center}
-.status{font-size:11px;color:#666;text-align:center;min-height:18px;padding:4px}
+.progress-label{font-size:9px;color:#888;margin-top:4px;text-align:center}
+.status{font-size:11px;color:#666;text-align:center;min-height:16px;padding:3px}
 .status.success{color:#22c55e;font-weight:600}
 .status.error{color:#ff4444;font-weight:600}
 </style>
 </head>
 <h2>ReMatch — Импорт экранов</h2>
-<p class="sub">Android 360×800 · Unbounded · светлая тема</p>
+<p class="sub">iPhone 16 · 393×852 · Dynamic Island · iOS HIG · Unbounded</p>
+<div class="hint">
+  ✅ Чекбокс: отступ ≥8px от всех краёв строки<br>
+  📐 Кнопки свайпа: низ кружка = экран − 54px<br>
+  ✘ «не нравится» везде (убрано «не моё»)<br>
+  🎨 Подложка под названием стиля: полупрозрачная
+</div>
 <div class="options">
   <div class="options-title">Настройки</div>
   <div class="opt-row">
@@ -48,7 +55,7 @@ h2{font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:4px}
     </select>
   </div>
   <div class="opt-row">
-    <span class="opt-label">Отступ между экранами</span>
+    <span class="opt-label">Отступ между телефонами</span>
     <input type="number" id="gap" value="80" min="20" max="400"/>
   </div>
 </div>
@@ -64,24 +71,26 @@ h2{font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:4px}
 <div class="status" id="status"></div>
 <script>
 var SCREENS=[
-  {id:'ui_kit',     name:'00 UI Kit',           desc:'Цвета, типографика, компоненты', icon:'🎨'},
-  {id:'splash',     name:'01 Сплэш',            desc:'Приветственный экран',            icon:'🌅'},
-  {id:'style_scan', name:'02a Скандинавский',   desc:'Свайп-карточка стиля',            icon:'🪵'},
-  {id:'style_min',  name:'02b Минимализм',      desc:'Свайп-карточка стиля',            icon:'⬜'},
-  {id:'style_loft', name:'02c Лофт',            desc:'Свайп-карточка стиля',            icon:'🏭'},
-  {id:'style_mod',  name:'02d Современный',     desc:'Свайп-карточка стиля',            icon:'🔷'},
-  {id:'style_class',name:'02e Классика',        desc:'Свайп-карточка стиля',            icon:'🏛'},
-  {id:'style_eco',  name:'02f Эко/Бохо',        desc:'Свайп-карточка стиля',            icon:'🌿'},
-  {id:'style_japdi',name:'02g Japandi',         desc:'Свайп-карточка стиля',            icon:'🎋'},
-  {id:'style_art',  name:'02h Арт-деко',        desc:'Свайп-карточка стиля',            icon:'✨'},
-  {id:'behavior',   name:'03 Поведение',        desc:'Как принимает решения',           icon:'🧠'},
-  {id:'budget',     name:'04 Бюджет',           desc:'Диапазон бюджета',                icon:'💰'},
-  {id:'area',       name:'05 Площадь',          desc:'Площадь квартиры',               icon:'📐'},
-  {id:'features',   name:'06 Критерии',         desc:'Важные параметры',               icon:'⭐'},
-  {id:'result_1',   name:'07a Мастер Алина',    desc:'Тиндер-карточка мастера',         icon:'🏆'},
-  {id:'result_2',   name:'07b Мастер Михаил',   desc:'Тиндер-карточка мастера',         icon:'🥇'},
-  {id:'profile_1',  name:'08a Профиль Алина',   desc:'Детальный профиль мастера',       icon:'👩'},
-  {id:'profile_2',  name:'08b Профиль Михаил',  desc:'Детальный профиль мастера',       icon:'👨'}
+  {id:'ui_kit',     name:'00 UI Kit',              desc:'Цвета, типографика, компоненты',  icon:'🎨'},
+  {id:'splash',     name:'01 Сплэш',               desc:'Приветственный экран · CTA',       icon:'🌅'},
+  {id:'style_scan', name:'02a Скандинавский',      desc:'Свайп стиля · НРАВИТСЯ',          icon:'🪵'},
+  {id:'style_min',  name:'02b Минимализм',         desc:'Свайп стиля · нейтральный',       icon:'⬜'},
+  {id:'style_loft', name:'02c Лофт',               desc:'Свайп стиля · НЕ НРАВИТСЯ',       icon:'🏭'},
+  {id:'style_mod',  name:'02d Современный',        desc:'Свайп стиля · нейтральный',       icon:'🔷'},
+  {id:'style_class',name:'02e Классика',           desc:'Свайп стиля · НРАВИТСЯ',          icon:'🏛'},
+  {id:'style_eco',  name:'02f Эко/Бохо',           desc:'Свайп стиля · нейтральный',       icon:'🌿'},
+  {id:'style_japdi',name:'02g Japandi',            desc:'Свайп стиля · НЕ НРАВИТСЯ',       icon:'🎋'},
+  {id:'style_art',  name:'02h Арт-деко',           desc:'Свайп стиля · НРАВИТСЯ',          icon:'✨'},
+  {id:'behavior',   name:'03 Поведение',           desc:'Как принимает решения · шаг 1/5', icon:'🧠'},
+  {id:'budget',     name:'04 Бюджет',              desc:'Диапазон бюджета · шаг 2/5',      icon:'💰'},
+  {id:'area',       name:'05 Площадь',             desc:'Площадь квартиры · шаг 3/5',      icon:'📐'},
+  {id:'features',   name:'06 Критерии',            desc:'24 тега · шаг 4/5',               icon:'⭐'},
+  {id:'result_1',   name:'07a Карточка Анна',      desc:'Свайп · 94% совпадение',          icon:'🏆'},
+  {id:'result_2',   name:'07b Карточка Максим',    desc:'Свайп · 87% совпадение',          icon:'🥇'},
+  {id:'result_3',   name:'07c Карточка Елена',     desc:'Свайп · 91% совпадение',          icon:'🥈'},
+  {id:'profile_1',  name:'08a Профиль Анна',       desc:'Полный профиль · Соколова',       icon:'👩'},
+  {id:'profile_2',  name:'08b Профиль Максим',     desc:'Полный профиль · Ветров',         icon:'👨'},
+  {id:'profile_3',  name:'08c Профиль Елена',      desc:'Полный профиль · Козлова',        icon:'👩‍💼'}
 ];
 var allSelected=true;
 function renderList(){
@@ -99,25 +108,24 @@ function renderList(){
 function toggleAll(){
   allSelected=!allSelected;
   var cbs=document.querySelectorAll('.sc-check');
-  for(var i=0;i<cbs.length;i++) cbs[i].checked=allSelected;
+  for(var i=0;i<cbs.length;i++)cbs[i].checked=allSelected;
 }
-function setStatus(t,type){var s=document.getElementById('status');s.textContent=t;s.className='status '+(type||'');}
+function setStatus(t,tp){var s=document.getElementById('status');s.textContent=t;s.className='status '+(tp||'');}
 function setProgress(pct,label){document.getElementById('progressFill').style.width=pct+'%';document.getElementById('progressLabel').textContent=label;}
 function startImport(){
   var checked=[],cbs=document.querySelectorAll('.sc-check:checked');
-  for(var i=0;i<cbs.length;i++) checked.push(cbs[i].value);
+  for(var i=0;i<cbs.length;i++)checked.push(cbs[i].value);
   if(checked.length===0){setStatus('Выберите хотя бы один экран','error');return;}
   var layout=document.getElementById('layout').value;
   var gap=parseInt(document.getElementById('gap').value)||80;
   document.getElementById('btnImport').disabled=true;
   document.getElementById('progressWrap').style.display='block';
-  setProgress(0,'Начинаем...'); setStatus('');
+  setProgress(0,'Начинаем...');setStatus('');
   parent.postMessage({pluginMessage:{type:'create-screens',screens:checked,layout:layout,gap:gap}},'*');
 }
-window.onmessage=function(event){
-  var msg=event.data.pluginMessage;
-  if(!msg)return;
-  if(msg.type==='progress') setProgress(msg.pct,msg.label);
+window.onmessage=function(e){
+  var msg=e.data.pluginMessage;if(!msg)return;
+  if(msg.type==='progress')setProgress(msg.pct,msg.label);
   if(msg.type==='done'){setProgress(100,'Готово!');setStatus('✅ Создано: '+msg.count+' экранов','success');document.getElementById('btnImport').disabled=false;}
   if(msg.type==='error'){setStatus('❌ '+msg.message,'error');document.getElementById('btnImport').disabled=false;}
 };

@@ -1,946 +1,1302 @@
-figma.showUI(__html__, { width: 360, height: 740 });
+figma.showUI(__html__, { width: 380, height: 820 });
 
-var W = 360;
-var H = 800;
+var W = 393;
+var H = 852;
+
+var PHONE = {
+  borderL: 14, borderR: 14,
+  borderT: 12, borderB: 14,
+  bodyR: 54, screenR: 46,
+  diW: 126, diH: 37, diR: 20,
+  diOffsetY: 12
+};
+
+function bodyW() { return W + PHONE.borderL + PHONE.borderR; }
+function bodyH() { return H + PHONE.borderT + PHONE.borderB; }
+
+var DI_BOTTOM = PHONE.diOffsetY + PHONE.diH;
+var SB_Y      = 15;
+var SB_H      = DI_BOTTOM + 10;
+
+var HOME_H = 34;
+var SIDE   = 16;
+var CW     = W - SIDE * 2;
+
+function safeBottom() { return H - HOME_H - 8; }
+function ctaTopY()    { return safeBottom() - 56 - 12; }
+
+function swipeCY() { return H - 54 - 34; }
 
 var C = {
-  black:   { r:0.004, g:0.004, b:0.004 },
-  white:   { r:1,     g:1,     b:1     },
-  accent:  { r:0.788, g:0.961, b:0.259 },
-  accentL: { r:0.878, g:0.980, b:0.600 }, // светло-зелёный фон кнопки нравится
-  gray100: { r:0.969, g:0.965, b:0.953 },
-  gray200: { r:0.878, g:0.859, b:0.902 },
-  gray400: { r:0.420, g:0.420, b:0.431 },
-  gray600: { r:0.231, g:0.231, b:0.243 },
-  green:   { r:0.133, g:0.773, b:0.369 },
-  red:     { r:0.945, g:0.290, b:0.290 },
-  bg:      { r:0.949, g:0.937, b:0.918 },
-  cream:   { r:0.980, g:0.984, b:0.996 }
+  black:   { r: 0.004, g: 0.004, b: 0.004 },
+  white:   { r: 1, g: 1, b: 1 },
+  accent:  { r: 0.788, g: 0.961, b: 0.259 },
+  accentL: { r: 0.878, g: 0.980, b: 0.600 },
+  redL:    { r: 1.000, g: 0.878, b: 0.878 },
+  gray100: { r: 0.969, g: 0.965, b: 0.953 },
+  gray200: { r: 0.878, g: 0.859, b: 0.902 },
+  gray400: { r: 0.420, g: 0.420, b: 0.431 },
+  gray600: { r: 0.231, g: 0.231, b: 0.243 },
+  bg:      { r: 0.949, g: 0.937, b: 0.918 },
+  cream:   { r: 0.980, g: 0.984, b: 0.996 },
+  // Акцентный светло-зелёный для декора сплэша (вместо белого)
+  splashDeco: { r: 0.878, g: 0.980, b: 0.600 }
 };
 
 var FONTS = {
-  regular:   { family:'Unbounded', style:'Regular'  },
-  medium:    { family:'Unbounded', style:'Medium'    },
-  semibold:  { family:'Unbounded', style:'SemiBold'  },
-  bold:      { family:'Unbounded', style:'Bold'      },
-  extrabold: { family:'Unbounded', style:'ExtraBold' },
-  black:     { family:'Unbounded', style:'Black'     }
+  regular:   { family: 'Unbounded', style: 'Regular' },
+  medium:    { family: 'Unbounded', style: 'Medium' },
+  semibold:  { family: 'Unbounded', style: 'SemiBold' },
+  bold:      { family: 'Unbounded', style: 'Bold' },
+  extrabold: { family: 'Unbounded', style: 'ExtraBold' },
+  black:     { family: 'Unbounded', style: 'Black' }
 };
 var LOADED = {};
 async function lf(f) {
-  var k = f.family+'_'+f.style;
-  if (!LOADED[k]) { await figma.loadFontAsync(f); LOADED[k]=true; }
+  var k = f.family + '_' + f.style;
+  if (!LOADED[k]) { await figma.loadFontAsync(f); LOADED[k] = true; }
 }
 function wf(w) {
-  if (w>=900) return FONTS.black;
-  if (w>=800) return FONTS.extrabold;
-  if (w>=700) return FONTS.bold;
-  if (w>=600) return FONTS.semibold;
-  if (w>=500) return FONTS.medium;
+  if (w >= 900) return FONTS.black;
+  if (w >= 800) return FONTS.extrabold;
+  if (w >= 700) return FONTS.bold;
+  if (w >= 600) return FONTS.semibold;
+  if (w >= 500) return FONTS.medium;
   return FONTS.regular;
 }
-
-function hex2rgb(hex) {
-  var n=parseInt(hex.replace('#',''),16);
-  return {r:((n>>16)&255)/255,g:((n>>8)&255)/255,b:(n&255)/255};
+function hex2rgb(h) {
+  var n = parseInt(h.replace('#', ''), 16);
+  return { r: ((n >> 16) & 255) / 255, g: ((n >> 8) & 255) / 255, b: (n & 255) / 255 };
 }
-function sf(node,color,opacity) {
-  var f={type:'SOLID',color:color};
-  if (opacity!==undefined) f.opacity=opacity;
-  node.fills=[f];
+function sf(node, color, opacity) {
+  var f = { type: 'SOLID', color: color };
+  if (opacity !== undefined) f.opacity = opacity;
+  node.fills = [f];
 }
-function rect(parent,x,y,w,h,color,r,opacity) {
-  var el=figma.createRectangle();
-  el.x=x; el.y=y; el.resize(w,h);
-  if (r) el.cornerRadius=r;
-  sf(el,color,opacity);
+function rect(parent, x, y, w, h, color, r, opacity) {
+  var el = figma.createRectangle();
+  el.x = x; el.y = y; el.resize(w, h);
+  if (r) el.cornerRadius = r;
+  sf(el, color, opacity);
   if (parent) parent.appendChild(el);
   return el;
 }
-function mkFrame(parent,x,y,w,h,color,r) {
-  var f=figma.createFrame();
-  f.x=x; f.y=y; f.resize(w,h);
-  if (r) f.cornerRadius=r;
-  f.clipsContent=true;
-  sf(f,color||C.white);
+function mkFrame(parent, x, y, w, h, color, r) {
+  var f = figma.createFrame();
+  f.x = x; f.y = y; f.resize(w, h);
+  if (r) f.cornerRadius = r;
+  f.clipsContent = true;
+  sf(f, color || C.white);
   if (parent) parent.appendChild(f);
   return f;
 }
-
-// Текст с точным вертикальным центрированием
-// cy = центр по Y, sz = fontSize
-async function txtC(parent,str,x,cy,w,sz,weight,color,opts) {
-  opts=opts||{};
-  var fn=wf(weight); await lf(fn);
-  var t=figma.createText();
-  t.fontName=fn; t.characters=String(str); t.fontSize=sz;
-  t.x=x;
-  if (w){t.textAutoResize='HEIGHT'; t.resize(w,t.height);}
-  // Центрируем: y = cy - height/2
-  t.y=cy - t.height/2;
-  if (opts.align) t.textAlignHorizontal=opts.align.toUpperCase();
-  if (opts.lineH) t.lineHeight={value:opts.lineH,unit:'PIXELS'};
-  if (opts.ls)    t.letterSpacing={value:opts.ls,unit:'PERCENT'};
-  sf(t,color,opts.opacity);
+async function txt(parent, str, x, y, w, sz, weight, color, opts) {
+  opts = opts || {};
+  var fn = wf(weight); await lf(fn);
+  var t = figma.createText();
+  t.fontName = fn; t.characters = String(str); t.fontSize = sz;
+  t.x = x; t.y = y;
+  if (w) { t.textAutoResize = 'HEIGHT'; t.resize(w, t.height); }
+  if (opts.align) t.textAlignHorizontal = opts.align.toUpperCase();
+  if (opts.lineH) t.lineHeight = { value: opts.lineH, unit: 'PIXELS' };
+  if (opts.ls) t.letterSpacing = { value: opts.ls, unit: 'PERCENT' };
+  sf(t, color, opts.opacity);
   if (parent) parent.appendChild(t);
   return t;
 }
-
-// Обычный текст с top-y
-async function txt(parent,str,x,y,w,sz,weight,color,opts) {
-  opts=opts||{};
-  var fn=wf(weight); await lf(fn);
-  var t=figma.createText();
-  t.fontName=fn; t.characters=String(str); t.fontSize=sz;
-  t.x=x; t.y=y;
-  if (w){t.textAutoResize='HEIGHT'; t.resize(w,t.height);}
-  if (opts.align) t.textAlignHorizontal=opts.align.toUpperCase();
-  if (opts.lineH) t.lineHeight={value:opts.lineH,unit:'PIXELS'};
-  if (opts.ls)    t.letterSpacing={value:opts.ls,unit:'PERCENT'};
-  sf(t,color,opts.opacity);
+async function txtC(parent, str, x, cy, w, sz, weight, color, opts) {
+  opts = opts || {};
+  var fn = wf(weight); await lf(fn);
+  var t = figma.createText();
+  t.fontName = fn; t.characters = String(str); t.fontSize = sz;
+  t.x = x;
+  if (w) { t.textAutoResize = 'HEIGHT'; t.resize(w, t.height); }
+  t.y = cy - t.height / 2;
+  if (opts.align) t.textAlignHorizontal = opts.align.toUpperCase();
+  if (opts.lineH) t.lineHeight = { value: opts.lineH, unit: 'PIXELS' };
+  if (opts.ls) t.letterSpacing = { value: opts.ls, unit: 'PERCENT' };
+  sf(t, color, opts.opacity);
   if (parent) parent.appendChild(t);
   return t;
 }
-
-function gradRect(parent,x,y,w,h,fromA,toA,r) {
-  var el=figma.createRectangle();
-  el.x=x; el.y=y; el.resize(w,h);
-  if (r) el.cornerRadius=r;
-  el.fills=[{
-    type:'GRADIENT_LINEAR',
-    gradientTransform:[[0,0,0],[0,1,0]],
-    gradientStops:[
-      {position:0,color:{r:0.004,g:0.004,b:0.004,a:fromA}},
-      {position:1,color:{r:0.004,g:0.004,b:0.004,a:toA}}
+function gradRect(parent, x, y, w, h, fromA, toA, r) {
+  var el = figma.createRectangle();
+  el.x = x; el.y = y; el.resize(w, h);
+  if (r) el.cornerRadius = r;
+  el.fills = [{
+    type: 'GRADIENT_LINEAR',
+    gradientTransform: [[0, 0, 0], [0, 1, 0]],
+    gradientStops: [
+      { position: 0, color: { r: 0.004, g: 0.004, b: 0.004, a: fromA } },
+      { position: 1, color: { r: 0.004, g: 0.004, b: 0.004, a: toA } }
     ]
   }];
   if (parent) parent.appendChild(el);
   return el;
 }
 
-function grp(name,nodes,parent) {
-  if (!nodes||nodes.length===0) return null;
-  var g=figma.group(nodes,parent||nodes[0].parent);
-  g.name=name;
+// ─── ГРУППИРОВКА ─────────────────────────────────────────────────────────────
+function grp(name, nodes, parent) {
+  var valid = nodes.filter(function(n) { return n && n.parent; });
+  if (!valid.length) return null;
+  var g = figma.group(valid, parent || valid[0].parent);
+  g.name = name;
   return g;
 }
 
-// ─── Статус-бар ──────────────────────────────────────────────────────────────
-async function statusBar(parent,dark) {
-  var clr=dark?C.black:C.white;
-  var nodes=[];
-  nodes.push(await txt(parent,'9:41',16,6,60,11,700,clr));
-  var bx=W-72;
-  for (var i=0;i<3;i++){var bh=4+i*3; nodes.push(rect(parent,bx+i*8,8+(10-bh),5,bh,clr,1));}
-  nodes.push(rect(parent,bx+28,12,8,5,clr,1));
-  nodes.push(rect(parent,bx+26,9,12,3,clr,1));
-  var bat=figma.createRectangle();
-  bat.resize(16,8);bat.x=bx+44;bat.y=8;bat.cornerRadius=2;
-  bat.strokes=[{type:'SOLID',color:clr}];bat.strokeWeight=1.5;bat.fills=[];
-  parent.appendChild(bat);nodes.push(bat);
-  nodes.push(rect(parent,bx+46,10,9,4,clr,1));
-  nodes.push(rect(parent,bx+61,10,2,4,clr,1));
-  grp('status-bar',nodes,parent);
-  return 24;
+// ─────────────────────────────────────────────────────────────────────────────
+// iPhone 16 РАМКА
+// ─────────────────────────────────────────────────────────────────────────────
+async function drawPhone(container, px, py) {
+  var bw = bodyW(), bh = bodyH();
+  var nodes = [];
+
+  var body = figma.createRectangle();
+  body.x = px; body.y = py; body.resize(bw, bh);
+  body.cornerRadius = PHONE.bodyR;
+  body.fills = [{ type: 'SOLID', color: { r: 0.13, g: 0.13, b: 0.14 } }];
+  body.strokes = [{ type: 'SOLID', color: { r: 0.30, g: 0.30, b: 0.33 } }];
+  body.strokeWeight = 1.5;
+  container.appendChild(body); nodes.push(body);
+
+  var scrBg = figma.createRectangle();
+  scrBg.x = px + PHONE.borderL - 1; scrBg.y = py + PHONE.borderT - 1;
+  scrBg.resize(W + 2, H + 2); scrBg.cornerRadius = PHONE.screenR + 1;
+  scrBg.fills = [{ type: 'SOLID', color: { r: 0.02, g: 0.02, b: 0.02 } }];
+  container.appendChild(scrBg); nodes.push(scrBg);
+
+  [[py + 130, 52], [py + 194, 52]].forEach(function(v) {
+    var b = figma.createRectangle();
+    b.x = px - 3.5; b.y = v[0]; b.resize(3.5, v[1]); b.cornerRadius = 2;
+    b.fills = [{ type: 'SOLID', color: { r: 0.26, g: 0.26, b: 0.28 } }];
+    container.appendChild(b); nodes.push(b);
+  });
+  var mt = figma.createRectangle();
+  mt.x = px - 3.5; mt.y = py + 88; mt.resize(3.5, 36); mt.cornerRadius = 2;
+  mt.fills = [{ type: 'SOLID', color: { r: 0.26, g: 0.26, b: 0.28 } }];
+  container.appendChild(mt); nodes.push(mt);
+
+  var pb = figma.createRectangle();
+  pb.x = px + bw; pb.y = py + 156; pb.resize(3.5, 72); pb.cornerRadius = 2;
+  pb.fills = [{ type: 'SOLID', color: { r: 0.26, g: 0.26, b: 0.28 } }];
+  container.appendChild(pb); nodes.push(pb);
+
+  grp('iphone16-body', nodes, container);
+
+  return {
+    screenX: px + PHONE.borderL,
+    screenY: py + PHONE.borderT,
+    diX: px + PHONE.borderL + W / 2 - PHONE.diW / 2,
+    diY: py + PHONE.borderT + PHONE.diOffsetY
+  };
 }
 
-// ─── Прогресс-бар ────────────────────────────────────────────────────────────
-function progressBar(parent,total,done,y) {
-  var gap=4,segW=(W-32-gap*(total-1))/total;
-  var nodes=[];
-  for (var i=0;i<total;i++)
-    nodes.push(rect(parent,16+i*(segW+gap),y,segW,3,i<done?C.black:C.gray200,2));
-  grp('progress-bar',nodes,parent);
-  return y+3+16;
-}
-
-// ─── Навбар ──────────────────────────────────────────────────────────────────
-function navBar(parent) {
-  var el=rect(parent,W/2-20,H-20,40,4,C.gray200,2);
-  grp('nav-bar',[el],parent);
-}
-
-// ─── CTA-кнопка ──────────────────────────────────────────────────────────────
-async function ctaBtn(parent,label,y,bg,fg) {
-  bg=bg||C.black; fg=fg||C.white;
-  var nodes=[];
-  var btnH=52;
-  nodes.push(rect(parent,16,y,W-32,btnH,bg,26));
-  // Текст строго по центру кнопки
-  nodes.push(await txtC(parent,label,16,y+btnH/2,W-32,10,700,fg,{align:'center'}));
-  grp('cta-btn',nodes,parent);
-  return y+btnH;
-}
-
-// ─── Кнопки свайпа ───────────────────────────────────────────────────────────
-// Левая: белый круг + крестик (✕) красным — мягкий, не агрессивный
-// Правая: светло-зелёный круг + чёрная галочка по центру
-async function swipeButtons(parent,bY,rightLabel) {
-  rightLabel=rightLabel||'нравится';
-  var cx=W/2;
-  var btnSz=64; // диаметр кнопки
-  var nodes=[];
-
-  // ── Не нравится ──────────────────────────────────────────────────────────
-  var nlX=cx-96, nlY=bY;
-  var nl=rect(parent,nlX,nlY,btnSz,btnSz,C.white,btnSz/2);
-  nl.strokes=[{type:'SOLID',color:C.gray200}];nl.strokeWeight=1.5;
-  nodes.push(nl);
-  // Крестик строго по центру кнопки
-  nodes.push(await txtC(parent,'✕',nlX,nlY+btnSz/2,btnSz,20,700,C.gray400,{align:'center'}));
-  nodes.push(await txt(parent,'не моё',nlX-4,nlY+btnSz+8,btnSz+8,8,500,C.gray400,{align:'center'}));
-
-  // ── Пропустить (центр) ───────────────────────────────────────────────────
-  var skipSz=36;
-  var skipX=cx-skipSz/2, skipY=bY+btnSz/2-skipSz/2;
-  var skip=rect(parent,skipX,skipY,skipSz,skipSz,C.gray100,skipSz/2);
-  nodes.push(skip);
-  nodes.push(await txtC(parent,'↺',skipX,skipY+skipSz/2,skipSz,14,500,C.gray400,{align:'center'}));
-
-  // ── Нравится — светло-зелёный фон, чёрная галочка ────────────────────────
-  var lkX=cx+32, lkY=bY;
-  var lk=rect(parent,lkX,lkY,btnSz,btnSz,C.accentL,btnSz/2);
-  lk.strokes=[{type:'SOLID',color:C.accent}];lk.strokeWeight=1.5;
-  nodes.push(lk);
-  // Галочка строго по центру
-  nodes.push(await txtC(parent,'✓',lkX,lkY+btnSz/2,btnSz,22,700,C.black,{align:'center'}));
-  nodes.push(await txt(parent,rightLabel,lkX,lkY+btnSz+8,btnSz,8,500,C.gray400,{align:'center'}));
-
-  grp('swipe-buttons',nodes,parent);
+function drawDynamicIsland(container, pos) {
+  var di = figma.createRectangle();
+  di.x = pos.diX; di.y = pos.diY;
+  di.resize(PHONE.diW, PHONE.diH);
+  di.cornerRadius = PHONE.diR;
+  di.fills = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0 } }];
+  di.name = 'dynamic-island';
+  container.appendChild(di);
+  return di;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SPLASH (экран 1)
+// STATUS BAR
 // ─────────────────────────────────────────────────────────────────────────────
-async function buildSplash(p) {
-  sf(p,C.cream);
-  var y=await statusBar(p,true);
+async function statusBar(parent, dark) {
+  var clr = dark ? C.black : C.white;
+  var nodes = [];
 
-  // ── Дизайнерские прямоугольники в правом верхнем углу ────────────────────
-  var decoNodes=[];
-  // Несколько прямоугольников разного размера, сдвинутых в угол
-  var deco=[
-    {x:W-80, y:28,  w:64,  h:64,  c:C.accent,  r:12},
-    {x:W-52, y:36,  w:36,  h:36,  c:C.black,   r:8},
-    {x:W-96, y:52,  w:28,  h:48,  c:C.gray200, r:8},
-    {x:W-68, y:24,  w:18,  h:18,  c:C.gray400, r:4, op:0.4},
-    {x:W-38, y:20,  w:20,  h:54,  c:C.black,   r:6, op:0.15},
-  ];
-  for (var di=0;di<deco.length;di++){
-    var d=deco[di];
-    decoNodes.push(rect(p,d.x,d.y,d.w,d.h,d.c,d.r,d.op));
+  nodes.push(await txt(parent, '9:41', SIDE, SB_Y, 80, 15, 700, clr));
+
+  var rx = W - SIDE;
+  var batW = 25, batH = 12, batX = rx - batW, batY = SB_Y + 3;
+  var bat = figma.createRectangle();
+  bat.x = batX; bat.y = batY; bat.resize(batW, batH); bat.cornerRadius = 3;
+  bat.strokes = [{ type: 'SOLID', color: clr }]; bat.strokeWeight = 1.2; bat.fills = [];
+  parent.appendChild(bat); nodes.push(bat);
+  nodes.push(rect(parent, batX + 2, batY + 2, 17, batH - 4, clr, 1));
+  var tip = figma.createRectangle();
+  tip.x = batX + batW; tip.y = batY + 4; tip.resize(2, 4); tip.cornerRadius = 1;
+  tip.fills = [{ type: 'SOLID', color: clr }];
+  parent.appendChild(tip); nodes.push(tip);
+  rx = batX - 8;
+
+  for (var wi = 0; wi < 3; wi++) {
+    var ws = 3 + wi * 3;
+    var we = figma.createRectangle();
+    we.x = rx - ws; we.y = SB_Y + (12 - ws); we.resize(ws, ws); we.cornerRadius = 1;
+    sf(we, clr, wi < 2 ? 0.45 : 1);
+    parent.appendChild(we); nodes.push(we);
   }
-  grp('deco-corner',decoNodes,p);
+  rx = rx - 15;
 
-  y+=32;
-  // ── Лого ─────────────────────────────────────────────────────────────────
-  var logoNodes=[];
-  var lb=rect(p,16,y,44,44,C.black,12);
-  logoNodes.push(lb);
-  logoNodes.push(await txtC(p,'R',16,y+22,44,16,900,C.accent,{align:'center'}));
-  logoNodes.push(await txt(p,'REMATCH',68,y+14,180,13,800,C.black,{ls:4}));
-  grp('logo',logoNodes,p);
-  y+=44+72;
+  for (var si = 0; si < 4; si++) {
+    var bh = 3 + si * 3;
+    nodes.push(rect(parent, rx - (4 - si) * 6, SB_Y + 14 - bh, 4, bh, clr, 1, si < 2 ? 0.4 : 1));
+  }
 
-  // ── Hero текст ───────────────────────────────────────────────────────────
-  var heroNodes=[];
-  heroNodes.push(await txt(p,'Найди своего\nдизайнера\nза 2 минуты',16,y,W-32,24,900,C.black,{lineH:40}));
-  heroNodes.push(rect(p,16,y+128,60,4,C.accent,2));
-  grp('hero-text',heroNodes,p);
-  y+=128+4+28;
-
-  var subNode=await txt(p,'Покажи интерьеры которые нравятся — мы подберём дизайнеров с похожими реализованными проектами',16,y,W-32,10,400,C.gray400,{lineH:17});
-  grp('subtitle',[subNode],p);
-
-  await ctaBtn(p,'Начать — это бесплатно',H-48-24-52-32);
-  var loginNode=await txt(p,'Уже есть аккаунт? Войти',16,H-48-24-52-32+62,W-32,10,400,C.gray400,{align:'center'});
-  grp('auth-link',[loginNode],p);
-  navBar(p);
+  grp('status-bar', nodes, parent);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// СТИЛИ — свайп
+// HOME INDICATOR
 // ─────────────────────────────────────────────────────────────────────────────
-var STYLES=[
-  {name:'Скандинавский',desc:'Белый, дерево,\nнатуральные материалы',tags:['Светло','Дерево','Уют'],          c:['#f5f0e8','#e8ddd0','#d4c4b0','#c9b99a','#a89070','#6b5040']},
-  {name:'Минимализм',   desc:'Чистые линии,\nнейтральные тона',      tags:['Лаконично','Чисто','Функционально'],c:['#f8f8f8','#e8e8e8','#d0d0d0','#b0b0b0','#787878','#2c2c2c']},
-  {name:'Лофт',         desc:'Кирпич, металл,\nоткрытые конструкции',tags:['Кирпич','Металл','Индустрия'],    c:['#c4bdb5','#a09890','#786050','#584840','#3c3028','#1e1814']},
-  {name:'Современный',  desc:'Актуальные формы,\nяркие акценты',     tags:['Актуально','Акценты','Тех'],      c:['#f0f4f8','#c8d8e8','#7090b0','#3a5f80','#1a3a58','#c9f542']},
-  {name:'Классика',     desc:'Симметрия, лепнина,\nблагородные мат.',tags:['Симметрия','Золото','Роскошь'],   c:['#f5efe0','#e8d5a8','#c8a84b','#8b7030','#4a3a18','#1a1208']},
-  {name:'Эко / Бохо',   desc:'Растения,\nнатуральные текстуры',      tags:['Природа','Текстуры','Тепло'],     c:['#e8f0e0','#c8d8a8','#98b870','#6a9048','#3d6028','#c4714a']},
-  {name:'Japandi',      desc:'Японский минимализм\n+ скандинавский уют',tags:['Ваби-саби','Тишина','Природа'],c:['#f0ece4','#ddd5c8','#b8a88c','#8c7860','#5c4838','#2c2018']},
-  {name:'Арт-деко',     desc:'Геометрия, контраст,\nзолото и роскошь',tags:['Геометрия','Контраст','Роскошь'],c:['#2a2010','#4a3a20','#c8a84b','#e8c870','#f0d890','#f8f0e0']}
+function homeBar(parent) {
+  var barW = 134, barH = 5;
+  var b = rect(parent, W / 2 - barW / 2, H - 10 - barH, barW, barH, C.black, 3, 0.2);
+  b.name = 'home-indicator';
+  return b;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// УТИЛИТЫ UI
+// ─────────────────────────────────────────────────────────────────────────────
+function progressBar(parent, total, done, y) {
+  var gap = 4, segW = (CW - gap * (total - 1)) / total;
+  var nodes = [];
+  for (var i = 0; i < total; i++)
+    nodes.push(rect(parent, SIDE + i * (segW + gap), y, segW, 3, i < done ? C.black : C.gray200, 2));
+  grp('progress-bar', nodes, parent);
+  return y + 3 + 14;
+}
+
+async function ctaBtn(parent, label, y, bg, fg) {
+  bg = bg || C.black; fg = fg || C.white;
+  var bH = 56, nodes = [];
+  nodes.push(rect(parent, SIDE, y, CW, bH, bg, 28));
+  nodes.push(await txtC(parent, label, SIDE, y + bH / 2, CW, 11, 700, fg, { align: 'center' }));
+  grp('cta-btn', nodes, parent);
+  return y + bH;
+}
+
+// ─── КНОПКИ СВАЙПА ───────────────────────────────────────────────────────────
+async function swipeButtons(parent, centerY) {
+  var cx = W / 2, sz = 68, nodes = [];
+
+  var nlX = cx - sz - 48, nlY = centerY - sz / 2;
+  var nl = rect(parent, nlX, nlY, sz, sz, C.redL, sz / 2);
+  nl.strokes = [{ type: 'SOLID', color: { r: 0.91, g: 0.75, b: 0.75 } }]; nl.strokeWeight = 1.5;
+  nodes.push(nl);
+  nodes.push(await txtC(parent, '✘', nlX, nlY + sz / 2, sz, 22, 700, C.black, { align: 'center' }));
+  nodes.push(await txt(parent, 'не нравится', nlX - 2, nlY + sz + 6, sz + 4, 7, 500, C.gray400, { align: 'center' }));
+
+  var skipSz = 42, skipX = cx - skipSz / 2, skipY = centerY - skipSz / 2;
+  nodes.push(rect(parent, skipX, skipY, skipSz, skipSz, C.gray100, skipSz / 2));
+  nodes.push(await txtC(parent, '↺', skipX, centerY, skipSz, 15, 500, C.gray400, { align: 'center' }));
+
+  var lkX = cx + 48, lkY = centerY - sz / 2;
+  var lk = rect(parent, lkX, lkY, sz, sz, C.accentL, sz / 2);
+  lk.strokes = [{ type: 'SOLID', color: C.accent }]; lk.strokeWeight = 1.5;
+  nodes.push(lk);
+  nodes.push(await txtC(parent, '✓', lkX, lkY + sz / 2, sz, 22, 700, C.black, { align: 'center' }));
+  nodes.push(await txt(parent, 'нравится', lkX, lkY + sz + 6, sz, 7, 500, C.gray400, { align: 'center' }));
+
+  grp('swipe-buttons', nodes, parent);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ДАННЫЕ
+// ─────────────────────────────────────────────────────────────────────────────
+var STYLES = [
+  { name: 'Скандинавский', desc: 'Белый, дерево,\nнатуральные материалы', tags: ['Светло', 'Дерево', 'Уют'],
+    c: ['#f5f0e8', '#e8ddd0', '#d4c4b0', '#c9b99a', '#a89070', '#6b5040'] },
+  { name: 'Минимализм', desc: 'Чистые линии,\nнейтральные тона', tags: ['Лаконично', 'Чисто', 'Функц.'],
+    c: ['#f8f8f8', '#e8e8e8', '#d0d0d0', '#b0b0b0', '#787878', '#2c2c2c'] },
+  { name: 'Лофт', desc: 'Кирпич, металл,\nоткрытые конструкции', tags: ['Кирпич', 'Металл', 'Индустрия'],
+    c: ['#c4bdb5', '#a09890', '#786050', '#584840', '#3c3028', '#1e1814'] },
+  { name: 'Современный', desc: 'Актуальные формы,\nяркие акценты', tags: ['Актуально', 'Акценты', 'Тех'],
+    c: ['#f0f4f8', '#c8d8e8', '#7090b0', '#3a5f80', '#1a3a58', '#c9f542'] },
+  { name: 'Классика', desc: 'Симметрия, лепнина,\nблагородные мат.', tags: ['Симметрия', 'Золото', 'Роскошь'],
+    c: ['#f5efe0', '#e8d5a8', '#c8a84b', '#8b7030', '#4a3a18', '#1a1208'] },
+  { name: 'Эко / Бохо', desc: 'Растения,\nнатуральные текстуры', tags: ['Природа', 'Текстуры', 'Тепло'],
+    c: ['#e8f0e0', '#c8d8a8', '#98b870', '#6a9048', '#3d6028', '#c4714a'] },
+  { name: 'Japandi', desc: 'Японский минимализм\n+ скандинавский уют', tags: ['Ваби-саби', 'Тишина', 'Природа'],
+    c: ['#f0ece4', '#ddd5c8', '#b8a88c', '#8c7860', '#5c4838', '#2c2018'] },
+  { name: 'Арт-деко', desc: 'Геометрия, контраст,\nзолото и роскошь', tags: ['Геометрия', 'Контраст', 'Роскошь'],
+    c: ['#2a2010', '#4a3a20', '#c8a84b', '#e8c870', '#f0d890', '#f8f0e0'] }
 ];
 
-async function buildStyleSwipe(p,idx,state) {
-  state=state||'neutral';
-  var st=STYLES[idx];
-  sf(p,C.white);
-
-  var y=await statusBar(p,true);
-  y+=16;
-
-  var headerNodes=[];
-  headerNodes.push(await txt(p,(idx+1)+' / '+STYLES.length,0,y,W,8,600,C.gray400,{align:'center',ls:3}));
-  y+=8+14;
-  headerNodes.push(await txt(p,'Нравится этот стиль?',16,y,W-32,13,800,C.black,{lineH:20}));
-  grp('header',headerNodes,p);
-  y+=20+18;
-
-  var bY=H-48-24-64;
-  var tagsH=36, gap_card=14;
-  var cH=bY-gap_card-tagsH-gap_card-y;
-  var cW=W-32;
-
-  var card=mkFrame(p,16,y,cW,cH,hex2rgb(st.c[0]),20);
-
-  var cols=3,rows=2,g=3;
-  var bW=(cW-g*(cols+1))/cols;
-  var bH=(cH-g*(rows+1))/rows;
-  var moodNodes=[];
-  for (var r=0;r<rows;r++)
-    for (var c=0;c<cols;c++)
-      moodNodes.push(rect(card,g+c*(bW+g),g+r*(bH+g),bW,bH,hex2rgb(st.c[Math.min(r*cols+c,st.c.length-1)]),12));
-  grp('moodboard',moodNodes,card);
-  gradRect(card,0,cH-130,cW,130,0,0.88);
-
-  if (state==='like') {
-    var lb2=rect(card,14,14,114,28,C.accent,8);
-    var lt=await txtC(card,'✓  НРАВИТСЯ',14,28,114,9,700,C.black,{align:'center'});
-    grp('badge-like',[lb2,lt],card);
-  } else if (state==='nope') {
-    var nb=rect(card,cW-128,14,114,28,C.white,8);
-    nb.strokes=[{type:'SOLID',color:C.gray200}];nb.strokeWeight=1;
-    var nt=await txtC(card,'✕  НЕ МОЁ',cW-128,28,114,9,700,C.gray400,{align:'center'});
-    grp('badge-nope',[nb,nt],card);
-  }
-
-  var cardTextNodes=[];
-  cardTextNodes.push(await txt(card,st.name,16,cH-68,cW-32,15,800,C.white,{lineH:24}));
-  cardTextNodes.push(await txt(card,st.desc,16,cH-40,cW-32,9,400,C.white,{opacity:0.75,lineH:14}));
-  grp('card-text',cardTextNodes,card);
-  grp('style-card',[card],p);
-  y+=cH+gap_card;
-
-  var tgNodes=[];
-  var tgX=16;
-  for (var ti=0;ti<st.tags.length;ti++){
-    var tgW=st.tags[ti].length*7+24;
-    var tg=rect(p,tgX,y,tgW,28,C.white,14);
-    tg.strokes=[{type:'SOLID',color:C.gray200}];tg.strokeWeight=1;
-    tgNodes.push(tg);
-    tgNodes.push(await txtC(p,st.tags[ti],tgX,y+14,tgW,9,500,C.gray400,{align:'center'}));
-    tgX+=tgW+8;
-  }
-  grp('tags',tgNodes,p);
-  await swipeButtons(p,bY,'нравится');
-  navBar(p);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ПОВЕДЕНИЕ — шаг 1/5
-// ─────────────────────────────────────────────────────────────────────────────
-async function buildBehavior(p) {
-  sf(p,C.white);
-  var y=await statusBar(p,true);
-  y+=8;
-  y=progressBar(p,5,1,y);
-  y+=16;
-
-  var hdrNodes=[];
-  hdrNodes.push(await txt(p,'ШАГ 1 ИЗ 5',16,y,W-32,8,600,C.gray400,{ls:4}));
-  y+=8+12;
-  hdrNodes.push(await txt(p,'Как вы принимаете\nрешения?',16,y,W-32,14,800,C.black,{lineH:22}));
-  y+=44+10;
-  hdrNodes.push(await txt(p,'Выберите одно — то, что ближе',16,y,W-32,9,400,C.gray400));
-  grp('header',hdrNodes,p);
-  y+=9+18;
-
-  // Однострочный текст в кнопках (короткие подписи)
-  var items=[
-    {icon:'🖼',txt:'Хожу по шоурумам'},
-    {icon:'📱',txt:'Pinterest / Instagram'},
-    {icon:'💬',txt:'Советуюсь с другими'},
-    {icon:'🔍',txt:'Долго сравниваю'},
-    {icon:'⚡',txt:'Решаю по ощущению'}
-  ];
-  var listNodes=[];
-  var rowH=54;
-  for (var i=0;i<items.length;i++){
-    var sel=i===1;
-    var row=rect(p,16,y,W-32,rowH,sel?C.gray100:C.white,12);
-    row.strokes=[{type:'SOLID',color:sel?C.black:C.gray200}];row.strokeWeight=1.5;
-    listNodes.push(row);
-    listNodes.push(await txtC(p,items[i].icon,28,y+rowH/2,24,16,400,C.black,{align:'center'}));
-    listNodes.push(await txtC(p,items[i].txt,60,y+rowH/2,W-60-32-16-24,10,500,C.black,{align:'left'}));
-    if (sel){
-      var cb=rect(p,W-16-16-24,y+rowH/2-12,24,24,C.black,6);
-      listNodes.push(cb);
-      listNodes.push(await txtC(p,'✓',W-16-16-24,y+rowH/2,24,10,800,C.white,{align:'center'}));
-    }
-    y+=rowH+8;
-  }
-  grp('options-list',listNodes,p);
-  await ctaBtn(p,'Далее →',H-48-20-52);
-  navBar(p);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// БЮДЖЕТ — шаг 2/5
-// ─────────────────────────────────────────────────────────────────────────────
-async function buildBudget(p) {
-  sf(p,C.white);
-  var y=await statusBar(p,true);
-  y+=8;
-  y=progressBar(p,5,2,y);
-  y+=16;
-
-  var hdrNodes=[];
-  hdrNodes.push(await txt(p,'ШАГ 2 ИЗ 5',16,y,W-32,8,600,C.gray400,{ls:4}));
-  y+=8+12;
-  hdrNodes.push(await txt(p,'Бюджет на дизайн-проект',16,y,W-32,14,800,C.black,{lineH:22}));
-  y+=22+10;
-  hdrNodes.push(await txt(p,'Поможет подобрать мастера нужного уровня',16,y,W-32,9,400,C.gray400));
-  grp('header',hdrNodes,p);
-  y+=9+18;
-
-  var list=[
-    {p:'до 80 000 ₽',        d:'Планировка и спецификации'},
-    {p:'80 000 – 150 000 ₽', d:'Полный проект, 3D'},
-    {p:'150 000 – 300 000 ₽',d:'Проект с авторским надзором'},
-    {p:'300 000 – 600 000 ₽',d:'Комплексный под ключ'},
-    {p:'от 600 000 ₽',       d:'Премиум, эксклюзив'},
-    {p:'Пока не знаю',        d:'Расскажем о вариантах'}
-  ];
-  var listNodes=[];
-  var rowH=58;
-  for (var i=0;i<list.length;i++){
-    var sel=i===2;
-    var row=rect(p,16,y,W-32,rowH,sel?C.gray100:C.white,12);
-    row.strokes=[{type:'SOLID',color:sel?C.black:C.gray200}];row.strokeWeight=1.5;
-    listNodes.push(row);
-    listNodes.push(await txt(p,list[i].p,28,y+12,W-60-32,10,700,C.black));
-    listNodes.push(await txt(p,list[i].d,28,y+28,W-60-32,9,400,C.gray400));
-    if (sel){
-      var cb=rect(p,W-16-16-24,y+rowH/2-12,24,24,C.black,6);
-      listNodes.push(cb);
-      listNodes.push(await txtC(p,'✓',W-16-16-24,y+rowH/2,24,10,800,C.white,{align:'center'}));
-    }
-    y+=rowH+8;
-  }
-  grp('budget-list',listNodes,p);
-  navBar(p);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ПЛОЩАДЬ — шаг 3/5
-// ─────────────────────────────────────────────────────────────────────────────
-async function buildArea(p) {
-  sf(p,C.white);
-  var y=await statusBar(p,true);
-  y+=8;
-  y=progressBar(p,5,3,y);
-  y+=16;
-
-  var hdrNodes=[];
-  hdrNodes.push(await txt(p,'ШАГ 3 ИЗ 5',16,y,W-32,8,600,C.gray400,{ls:4}));
-  y+=8+12;
-  hdrNodes.push(await txt(p,'Площадь квартиры',16,y,W-32,14,800,C.black,{lineH:22}));
-  y+=22+10;
-  hdrNodes.push(await txt(p,'Примерно — для подбора специализации',16,y,W-32,9,400,C.gray400));
-  grp('header',hdrNodes,p);
-  y+=9+24;
-
-  var areas=[{n:'до 35 м²',l:'студия'},{n:'35–55 м²',l:'1–2 комн.'},{n:'55–80 м²',l:'2–3 комн.'},{n:'от 80 м²',l:'большая'}];
-  var cW=(W-32-10)/2, cellH=104;
-  var gridNodes=[];
-  for (var i=0;i<4;i++){
-    var col=i%2,row=Math.floor(i/2);
-    var cx=16+col*(cW+10),cy=y+row*(cellH+10);
-    var sel=i===1;
-    var cell=rect(p,cx,cy,cW,cellH,sel?C.gray100:C.white,14);
-    cell.strokes=[{type:'SOLID',color:sel?C.black:C.gray200}];cell.strokeWeight=1.5;
-    gridNodes.push(cell);
-    gridNodes.push(await txtC(p,areas[i].n,cx+8,cy+cellH/2-8,cW-16,13,800,C.black,{align:'center'}));
-    gridNodes.push(await txtC(p,areas[i].l,cx+8,cy+cellH/2+10,cW-16,9,500,C.gray400,{align:'center'}));
-    if (sel){
-      var cb=rect(p,cx+cW-8-22,cy+8,22,22,C.black,6);
-      gridNodes.push(cb);
-      gridNodes.push(await txtC(p,'✓',cx+cW-8-22,cy+19,22,9,800,C.white,{align:'center'}));
-    }
-  }
-  grp('area-grid',gridNodes,p);
-  navBar(p);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// КРИТЕРИИ — шаг 4/5
-// ─────────────────────────────────────────────────────────────────────────────
-async function buildFeatures(p) {
-  sf(p,C.white);
-  var y=await statusBar(p,true);
-  y+=8;
-  y=progressBar(p,5,4,y);
-  y+=16;
-
-  var hdrNodes=[];
-  hdrNodes.push(await txt(p,'ШАГ 4 ИЗ 5',16,y,W-32,8,600,C.gray400,{ls:4}));
-  y+=8+12;
-  hdrNodes.push(await txt(p,'Что важно в интерьере?',16,y,W-32,14,800,C.black,{lineH:22}));
-  y+=22+10;
-  hdrNodes.push(await txt(p,'Выберите всё, что важно для вас',16,y,W-32,9,400,C.gray400));
-  grp('header',hdrNodes,p);
-  y+=9+18;
-
-  var tags=[
-    {t:'хранение',s:true},{t:'свет',s:false},
-    {t:'эргономика',s:true},{t:'эко',s:false},
-    {t:'акценты',s:true},{t:'простор',s:false},
-    {t:'уют',s:true},{t:'минимум',s:false},
-    {t:'рабочая зона',s:false},{t:'детская',s:false},
-    {t:'текстиль',s:false},{t:'выс. потол.',s:false}
-  ];
-  var rx=16,ry=y,tagNodes=[];
-  for (var i=0;i<tags.length;i++){
-    var tw=tags[i].t.length*7+24;
-    if (rx+tw>W-16){rx=16;ry+=40;}
-    var te=rect(p,rx,ry,tw,32,tags[i].s?C.black:C.white,16);
-    te.strokes=[{type:'SOLID',color:tags[i].s?C.black:C.gray200}];te.strokeWeight=1.5;
-    tagNodes.push(te);
-    tagNodes.push(await txtC(p,tags[i].t,rx,ry+16,tw,9,tags[i].s?600:500,tags[i].s?C.white:C.black,{align:'center'}));
-    rx+=tw+8;
-  }
-  grp('tags-grid',tagNodes,p);
-  await ctaBtn(p,'Показать мастеров →',H-48-20-52,C.accent,C.black);
-  navBar(p);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// МАСТЕРА
-// ─────────────────────────────────────────────────────────────────────────────
-var MASTERS=[
+var MASTERS = [
   {
-    initials:'АС',
-    name:'Алина Смирнова',
-    city:'Москва', exp:'6 лет',
-    rating:'4.9', reviews:'127 отзывов', match:'94',
-    price:'4 500 ₽/м²', projects:'47',
-    why:['светлые тона','минимализм','натур. матер.','japandi'],
-    reviews_list:[
-      {av:'КМ',name:'Ксения М.',obj:'квартира 68 м²',stars:'★★★★★',text:'Алина поняла нас с первого раза — показала реальные проекты в нашем стиле. Результат превзошёл ожидания.'},
-      {av:'ДП',name:'Дмитрий П.',obj:'апартаменты 55 м²',stars:'★★★★★',text:'Очень детальный проект, всё продумано до мелочей. Работать было комфортно и приятно.'},
-      {av:'АВ',name:'Анна В.',obj:'дом 110 м²',stars:'★★★★☆',text:'Хороший результат, небольшие правки по срокам, но качество на высоте.'}
+    initials: 'АС', firstName: 'Анна', lastName: 'Соколова',
+    city: 'Москва', exp: '6 лет', rating: '4.9', reviews: '127 отзывов',
+    match: '94', price: '4 500 ₽/м²', projects: '47',
+    why: ['светлые тона', 'минимализм', 'натур. матер.', 'japandi'],
+    reviewsList: [
+      { av: 'КМ', name: 'Катерина М.', obj: 'квартира 68 м²', stars: '★★★★★',
+        text: 'Анна поняла нас с первого раза — показала реальные проекты в нашем стиле.' },
+      { av: 'ДП', name: 'Дмитрий П.', obj: 'апартаменты 55 м²', stars: '★★★★★',
+        text: 'Очень детальный проект, всё продумано до мелочей.' },
+      { av: 'АВ', name: 'Алина В.', obj: 'дом 110 м²', stars: '★★★★☆',
+        text: 'Хороший результат, небольшие правки по срокам, качество на высоте.' }
     ],
-    bg:['#f0ece4','#ddd5c8','#b8a88c','#8c7860','#e8ddd0','#f5f0e8'],
-    idx:1
+    bg: ['#f0ece4', '#ddd5c8', '#b8a88c', '#8c7860', '#e8ddd0', '#f5f0e8'], idx: 1
   },
   {
-    initials:'МВ',
-    name:'Михаил Ветров',
-    city:'Санкт-Петербург', exp:'4 года',
-    rating:'4.8', reviews:'89 отзывов', match:'87',
-    price:'3 800 ₽/м²', projects:'31',
-    why:['лофт-стиль','тёмные тона','открытые планировки','современный'],
-    reviews_list:[
-      {av:'ИС',name:'Иван С.',obj:'студия 38 м²',stars:'★★★★★',text:'Михаил отлично чувствует лофт-стиль. Всё сделал быстро и именно так, как я хотел.'},
-      {av:'ЕА',name:'Елена А.',obj:'квартира 72 м²',stars:'★★★★★',text:'Результат отличный, авторский надзор прошёл гладко.'},
-      {av:'РН',name:'Роман Н.',obj:'офис 90 м²',stars:'★★★★☆',text:'Профессионал своего дела. Рекомендую всем кто любит индустриальный стиль.'}
+    initials: 'МВ', firstName: 'Максим', lastName: 'Ветров',
+    city: 'Санкт-Петербург', exp: '4 года', rating: '4.8', reviews: '89 отзывов',
+    match: '87', price: '3 800 ₽/м²', projects: '31',
+    why: ['лофт-стиль', 'тёмные тона', 'открытые планировки', 'современный'],
+    reviewsList: [
+      { av: 'ИС', name: 'Игорь С.', obj: 'студия 38 м²', stars: '★★★★★',
+        text: 'Максим отлично чувствует лофт-стиль. Всё сделал быстро и именно так, как я хотел.' },
+      { av: 'ЕА', name: 'Елена А.', obj: 'квартира 72 м²', stars: '★★★★★',
+        text: 'Результат отличный, авторский надзор прошёл гладко.' },
+      { av: 'РН', name: 'Роман Н.', obj: 'офис 90 м²', stars: '★★★★☆',
+        text: 'Профессионал своего дела. Рекомендую всем любителям индустриального стиля.' }
     ],
-    bg:['#e8e8e8','#d0d0d0','#b0b0b0','#c8d8e8','#7090b0','#3a5f80'],
-    idx:2
+    bg: ['#e8e8e8', '#d0d0d0', '#b0b0b0', '#c8d8e8', '#7090b0', '#3a5f80'], idx: 2
+  },
+  {
+    initials: 'ЕК', firstName: 'Елена', lastName: 'Кузнецова',
+    city: 'Москва', exp: '8 лет', rating: '5.0', reviews: '203 отзыва',
+    match: '91', price: '5 200 ₽/м²', projects: '68',
+    why: ['классика', 'симметрия', 'золото', 'благородные мат.'],
+    reviewsList: [
+      { av: 'МС', name: 'Мария С.', obj: 'квартира 95 м²', stars: '★★★★★',
+        text: 'Елена создала именно тот классический интерьер, о котором я мечтала. Безупречно.' },
+      { av: 'АГ', name: 'Андрей Г.', obj: 'загородный дом 200 м²', stars: '★★★★★',
+        text: 'Профессионализм на высшем уровне. Все сроки соблюдены, качество отменное.' }
+    ],
+    bg: ['#f5efe0', '#e8d5a8', '#c8a84b', '#8b7030', '#4a3a18', '#f5f0e8'], idx: 3
   }
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// КАРТОЧКА МАСТЕРА (результат)
+// ЧЕКБОКС-ГАЛОЧКА
 // ─────────────────────────────────────────────────────────────────────────────
-async function buildResult(p,mi) {
-  var m=MASTERS[mi];
-  sf(p,C.white);
-
-  var y=await statusBar(p,true);
-  y+=18;
-
-  var hdrNodes=[];
-  hdrNodes.push(await txt(p,'СОВПАДЕНИЯ',16,y,130,8,600,C.gray400,{ls:4}));
-  var total=MASTERS.length;
-  for (var di=0;di<total;di++)
-    hdrNodes.push(rect(p,W-16-(total-di)*18,y,12,12,di<m.idx?C.accent:C.gray200,6));
-  grp('header',hdrNodes,p);
-  y+=12+18;
-
-  var bY=H-48-28-64;   // фиксированный Y кнопок
-  var cardGap=28;       // отступ между карточкой и кнопками
-  var cH=bY-cardGap-y;
-  var cW=W-32;
-
-  var card=mkFrame(p,16,y,cW,cH,C.white,20);
-  card.effects=[{type:'DROP_SHADOW',color:{r:0,g:0,b:0,a:0.08},offset:{x:0,y:4},radius:24,spread:0,visible:true,blendMode:'NORMAL'}];
-
-  var mH=Math.round(cH*0.42);
-  var cols=3,g=3;
-  var bW=(cW-g*(cols+1))/cols;
-  var moodNodes=[];
-  for (var ci=0;ci<cols;ci++)
-    moodNodes.push(rect(card,g+ci*(bW+g),g,bW,mH-g*2,hex2rgb(m.bg[ci]),12));
-  moodNodes.push(rect(card,g,mH-g,cW-g*2,36,hex2rgb(m.bg[3]),0));
-  grp('moodboard',moodNodes,card);
-
-  var badgeNodes=[];
-  badgeNodes.push(rect(card,14,14,120,26,C.accent,13));
-  badgeNodes.push(await txtC(card,m.match+'% совпадение',14,27,120,8,700,C.black,{align:'center'}));
-  grp('badge',badgeNodes,card);
-
-  var infoY=mH+36+18;
-  var infoNodes=[];
-  var av=rect(card,16,infoY,40,40,C.black,20);
-  infoNodes.push(av);
-  infoNodes.push(await txtC(card,m.initials,16,infoY+20,40,11,800,C.accent,{align:'center'}));
-  // Имя — явно прописываем строку
-  infoNodes.push(await txt(card,m.name,64,infoY+2,cW-64-16,11,800,C.black));
-  infoNodes.push(await txt(card,m.city+' · '+m.exp,64,infoY+18,cW-64-16,9,400,C.gray400));
-  infoNodes.push(await txt(card,'★ '+m.rating+'  '+m.reviews,64,infoY+32,cW-64-16,8,500,C.black));
-  infoY+=40+18;
-
-  infoNodes.push(rect(card,16,infoY,cW-32,1,C.gray200));
-  infoY+=1+14;
-  infoNodes.push(await txt(card,m.price,16,infoY,(cW-32)/2,12,800,C.black));
-  infoNodes.push(await txt(card,m.projects+' проектов',cW/2,infoY,(cW-32)/2,11,600,C.gray400,{align:'right'}));
-  infoNodes.push(await txt(card,'стоимость/м²',16,infoY+17,(cW-32)/2,7,400,C.gray400));
-  infoY+=17+18+12;
-
-  infoNodes.push(await txt(card,'ПОЧЕМУ СОВПАЛИ',16,infoY,200,7,700,C.gray400,{ls:4}));
-  infoY+=7+10;
-  var tgX=16;
-  for (var wyi=0;wyi<m.why.length;wyi++){
-    var wt=m.why[wyi];
-    var wtW=wt.length*6+20;
-    if (tgX+wtW>cW-16){tgX=16;infoY+=26;}
-    infoNodes.push(rect(card,tgX,infoY,wtW,22,C.gray100,11));
-    infoNodes.push(await txtC(card,wt,tgX,infoY+11,wtW,8,500,C.gray600,{align:'center'}));
-    tgX+=wtW+6;
-  }
-  grp('card-info',infoNodes,card);
-  grp('master-card',[card],p);
-
-  var hintNodes=[];
-  hintNodes.push(await txt(p,'← не подходит',16,bY-22,(W-32)/2,8,400,C.gray400));
-  hintNodes.push(await txt(p,'написать →',W/2,bY-22,(W-32)/2,8,400,C.gray400,{align:'right'}));
-  grp('swipe-hint',hintNodes,p);
-
-  await swipeButtons(p,bY,'написать');
-  navBar(p);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ПРОФИЛЬ МАСТЕРА
-// ─────────────────────────────────────────────────────────────────────────────
-async function buildProfile(p,mi) {
-  var m=MASTERS[mi];
-  sf(p,C.white);
-
-  // CTA-панель прибита к низу — рисуем её первой, чтобы знать Y
-  var ctaPanelH=72;
-  var ctaY=H-48-ctaPanelH; // Y верхней границы CTA-панели
-
-  // ── CTA-панель (рисуем последней, но Y фиксируем сразу) ──────────────────
-  // Отрисуем в конце, сейчас просто запомним Y
-
-  // ── Герой ────────────────────────────────────────────────────────────────
-  var heroH=210;
-  var hero=mkFrame(p,0,0,W,heroH,C.black,0);
-  var cols=3,g=3;
-  var bW=(W-g*(cols+1))/cols;
-  var heroImgNodes=[];
-  for (var ci=0;ci<cols;ci++)
-    heroImgNodes.push(rect(hero,g+ci*(bW+g),g,bW,heroH-g*2,hex2rgb(m.bg[ci]),8));
-  grp('hero-images',heroImgNodes,hero);
-  gradRect(hero,0,heroH-120,W,120,0,0.78);
-
-  var backBtn=mkFrame(hero,16,36,34,34,C.black,17);
-  sf(backBtn,C.black,0.45);
-  await txtC(backBtn,'←',0,17,34,14,700,C.white,{align:'center'});
-  grp('back-btn',[backBtn],hero);
-
-  var badgeBg=rect(hero,16,heroH-44,180,28,C.accent,14);
-  var badgeTxt=await txtC(hero,'● '+m.match+'% совпадение с вашим вкусом',16,heroH-30,180,8,700,C.black,{align:'center'});
-  grp('hero-badge',[badgeBg,badgeTxt],hero);
-  grp('hero-section',[hero],p);
-
-  var y=heroH+20;
-  var bx=16;
-
-  // ── Имя + цена ────────────────────────────────────────────────────────────
-  var nameNodes=[];
-  nameNodes.push(await txt(p,m.name,bx,y,W-bx-16-100,15,800,C.black,{lineH:22}));
-  nameNodes.push(await txt(p,m.price,W-16-100,y,100,12,700,C.black,{align:'right'}));
-  nameNodes.push(await txt(p,'за м² проекта',W-16-100,y+17,100,8,400,C.gray400,{align:'right'}));
-  y+=22+6;
-  nameNodes.push(await txt(p,'📍 '+m.city+' · работает онлайн',bx,y,W-32,9,500,C.gray400));
-  grp('name-price',nameNodes,p);
-  y+=9+16;
-
-  // ── Теги ─────────────────────────────────────────────────────────────────
-  var tgNodes=[];
-  var tgX=bx;
-  for (var ti=0;ti<m.why.length;ti++){
-    var tw=m.why[ti].length*6+20;
-    var isSel=ti===0;
-    var tge=rect(p,tgX,y,tw,28,isSel?C.accent:C.gray100,14);
-    tgNodes.push(tge);
-    tgNodes.push(await txtC(p,m.why[ti],tgX,y+14,tw,8,700,isSel?C.black:C.gray600,{align:'center'}));
-    tgX+=tw+6;
-  }
-  grp('style-tags',tgNodes,p);
-  y+=28+18;
-
-  rect(p,0,y,W,1,C.gray200); y+=1+18;
-
-  // ── Статистика ────────────────────────────────────────────────────────────
-  var s3W=(W-32-12)/3,statH=68;
-  var stats=[{v:m.projects,k:'проектов'},{v:m.exp,k:'опыт'},{v:'★ '+m.rating,k:'рейтинг'}];
-  var statNodes=[];
-  for (var si=0;si<3;si++){
-    var sx=bx+si*(s3W+6);
-    var sc=rect(p,sx,y,s3W,statH,C.white,12);
-    sc.strokes=[{type:'SOLID',color:C.gray200}];sc.strokeWeight=1;
-    statNodes.push(sc);
-    // Значение строго по центру ячейки
-    statNodes.push(await txtC(p,stats[si].v,sx+4,y+statH/2-7,s3W-8,14,800,C.black,{align:'center'}));
-    statNodes.push(await txtC(p,stats[si].k,sx+4,y+statH/2+10,s3W-8,7,500,C.gray400,{align:'center',ls:3}));
-  }
-  grp('stats',statNodes,p);
-  y+=statH+18;
-
-  rect(p,0,y,W,1,C.gray200); y+=1+18;
-
-  // ── Реальные проекты — одна строка-карусель ───────────────────────────────
-  var secLbl=await txt(p,'РЕАЛЬНЫЕ ПРОЕКТЫ',bx,y,W-32,8,700,C.gray400,{ls:5});
-  grp('section-label',[secLbl],p);
-  y+=8+12;
-
-  // Горизонтальная карусель — 6 плиток в одну строку
-  // Первые 3 видны в экране, остальные намекают на прокрутку (обрезаются)
-  var phW=100,phH=76,phGap=10;
-  var phLabels=['Гостиная · 42 м²','Спальня · 18 м²','Кухня · 14 м²','Прихожая · 8 м²','Ванная · 6 м²','Балкон · 5 м²'];
-  var carouselNodes=[];
-  for (var pi=0;pi<6;pi++){
-    var phX=bx+pi*(phW+phGap);
-    carouselNodes.push(rect(p,phX,y,phW,phH,hex2rgb(m.bg[pi%m.bg.length]),10));
-    carouselNodes.push(await txt(p,phLabels[pi],phX,y+phH+5,phW,7,500,C.gray400,{align:'center'}));
-  }
-  // Индикатор «ещё» — текст справа
-  carouselNodes.push(await txt(p,'→ ещё',W-48,y+phH/2-5,40,8,600,C.gray400,{align:'right'}));
-  grp('projects-carousel',carouselNodes,p);
-  y+=phH+18+12;
-
-  rect(p,0,y,W,1,C.gray200); y+=1+18;
-
-  // ── Отзывы ───────────────────────────────────────────────────────────────
-  var revSecLbl=await txt(p,'ОТЗЫВЫ',bx,y,W-32,8,700,C.gray400,{ls:5});
-  grp('section-label-reviews',[revSecLbl],p);
-  y+=8+12;
-
-  var revNodes=[];
-  for (var ri=0;ri<m.reviews_list.length;ri++){
-    var rv=m.reviews_list[ri];
-    var revH=102;
-    var revCard=rect(p,bx,y,W-32,revH,C.white,14);
-    revCard.strokes=[{type:'SOLID',color:C.gray200}];revCard.strokeWeight=0.5;
-    revNodes.push(revCard);
-    var rav=rect(p,bx+12,y+14,30,30,C.black,15);
-    revNodes.push(rav);
-    revNodes.push(await txtC(p,rv.av,bx+12,y+29,30,10,700,C.accent,{align:'center'}));
-    revNodes.push(await txt(p,rv.name+' · '+rv.obj,bx+50,y+14,W-32-50-12,9,700,C.black));
-    revNodes.push(await txt(p,rv.stars,bx+50,y+28,60,9,400,C.black));
-    revNodes.push(await txt(p,rv.text,bx+12,y+52,W-32-24,9,400,C.gray400,{lineH:14}));
-    y+=revH+10;
-  }
-  grp('reviews',revNodes,p);
-  y+=8;
-
-  rect(p,0,y,W,1,C.gray200); y+=1+18;
-
-  // ── О мастере ─────────────────────────────────────────────────────────────
-  var factsLbl=await txt(p,'О МАСТЕРЕ',bx,y,W-32,8,700,C.gray400,{ls:5});
-  grp('section-label-facts',[factsLbl],p);
-  y+=8+12;
-
-  var facts=['Срок дизайн-проекта: 3–5 недель','200+ клиентов по всей России','Первая консультация — бесплатно','Топ-10 Houzz Russia 2023'];
-  var factIcons=['⏱','👥','🎁','🏆'];
-  var factNodes=[];
-  for (var fi=0;fi<facts.length;fi++){
-    var fic=rect(p,bx,y+fi*40,28,28,C.white,8);
-    fic.strokes=[{type:'SOLID',color:C.gray200}];fic.strokeWeight=0.5;
-    factNodes.push(fic);
-    factNodes.push(await txtC(p,factIcons[fi],bx,y+fi*40+14,28,14,400,C.black,{align:'center'}));
-    factNodes.push(await txt(p,facts[fi],bx+38,y+fi*40+9,W-bx-38-16,9,500,C.black,{lineH:14}));
-  }
-  grp('facts',factNodes,p);
-
-  // ── CTA-панель — строго прибита к низу ───────────────────────────────────
-  // ctaY = H - 48(навбар-зона) - ctaPanelH
-  var ctaNodes=[];
-  // Белая подложка до самого низа
-  ctaNodes.push(rect(p,0,ctaY,W,H-ctaY,C.white));
-  ctaNodes.push(rect(p,0,ctaY,W,1,C.gray200));
-
-  var innerY=ctaY+10;
-  var btnW=W-32-8-48-8-48;
-  var mainBtn=rect(p,bx,innerY,btnW,52,C.black,26);
-  ctaNodes.push(mainBtn);
-  ctaNodes.push(await txtC(p,'Написать '+m.name.split(' ')[0]+' →',bx,innerY+26,btnW,10,700,C.white,{align:'center'}));
-
-  var shareX=W-16-48;
-  var shareBtn=rect(p,shareX,innerY+4,44,44,C.white,22);
-  shareBtn.strokes=[{type:'SOLID',color:C.gray200}];shareBtn.strokeWeight=0.5;
-  ctaNodes.push(shareBtn);
-  ctaNodes.push(await txtC(p,'↗',shareX,innerY+26,44,16,600,C.black,{align:'center'}));
-
-  var saveX=W-16-48-8-48;
-  var saveBtn=rect(p,saveX,innerY+4,44,44,C.white,22);
-  saveBtn.strokes=[{type:'SOLID',color:C.gray200}];saveBtn.strokeWeight=0.5;
-  ctaNodes.push(saveBtn);
-  ctaNodes.push(await txtC(p,'☆',saveX,innerY+26,44,18,400,C.black,{align:'center'}));
-
-  grp('cta-panel',ctaNodes,p);
-  navBar(p);
+async function checkmark(parent, rowX, rowY, rowW, rowH) {
+  var sz = Math.min(rowH - 16, 24);
+  var chkX = rowX + rowW - 8 - sz;
+  var chkY = rowY + (rowH - sz) / 2;
+  var nodes = [];
+  var bg = rect(parent, chkX, chkY, sz, sz, C.black, 6);
+  nodes.push(bg);
+  nodes.push(await txtC(parent, '✓', chkX, chkY + sz / 2, sz, Math.round(sz * 0.45), 800, C.white, { align: 'center' }));
+  grp('checkmark', nodes, parent);
+  return nodes;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UI KIT
 // ─────────────────────────────────────────────────────────────────────────────
 async function buildUIKit(p) {
-  p.resize(1200,980);
-  sf(p,C.bg);
-  var x=48,y=48;
-  await txt(p,'REMATCH UI KIT',x,y,600,24,900,C.black,{ls:3});
-  await txt(p,'Unbounded · Android 360×800 · Light theme',x,y+40,600,10,400,C.gray400,{ls:2});
-  y+=90;
-  await txt(p,'ЦВЕТА',x,y,200,8,700,C.gray400,{ls:5}); y+=22;
-  var tokens=[
-    {n:'Black',  c:C.black,  h:'#010101'},{n:'White',  c:C.white,  h:'#ffffff'},
-    {n:'Accent', c:C.accent, h:'#c9f542'},{n:'AccentL',c:C.accentL,h:'#e0faa0'},
-    {n:'BG',     c:C.bg,     h:'#f2eeea'},{n:'Gray100',c:C.gray100,h:'#f7f6f3'},
-    {n:'Gray200',c:C.gray200,h:'#e0dbe6'},{n:'Gray400',c:C.gray400,h:'#6b6b6e'},
-    {n:'Gray600',c:C.gray600,h:'#3b3b3e'},{n:'Green',  c:C.green,  h:'#22c55e'}
+  sf(p, C.bg);
+  var x = 56, y = 56;
+  await txt(p, 'REMATCH  UI KIT', x, y, 900, 28, 900, C.black, { ls: 3 });
+  await txt(p, 'Unbounded · iPhone 16 · 393×852 · Dynamic Island · iOS HIG', x, y + 44, 800, 11, 400, C.gray400, { ls: 2 });
+  y += 108;
+
+  // 01 ЦВЕТА
+  var colorNodes = [];
+  colorNodes.push(await txt(p, '01  ЦВЕТА', x, y, 400, 10, 700, C.gray400, { ls: 5 }));
+  y += 30;
+  var tokens = [
+    { n: 'Black', c: C.black, h: '#010101' }, { n: 'White', c: C.white, h: '#ffffff' },
+    { n: 'Accent', c: C.accent, h: '#c9f542' }, { n: 'Accent L', c: C.accentL, h: '#e0faa0' },
+    { n: 'Red L', c: C.redL, h: '#ffe0e0' }, { n: 'BG', c: C.bg, h: '#f2eeea' },
+    { n: 'Gray 100', c: C.gray100, h: '#f7f6f3' }, { n: 'Gray 200', c: C.gray200, h: '#e0dbe6' },
+    { n: 'Gray 400', c: C.gray400, h: '#6b6b6e' }, { n: 'Gray 600', c: C.gray600, h: '#3b3b3e' }
   ];
-  for (var ci=0;ci<tokens.length;ci++){
-    var swX=x+ci*106;
-    var sw=rect(p,swX,y,84,84,tokens[ci].c,12);
-    if(tokens[ci].n==='White'){sw.strokes=[{type:'SOLID',color:C.gray200}];sw.strokeWeight=1;}
-    await txt(p,tokens[ci].n,swX,y+90,84,8,600,C.gray600,{align:'center'});
-    await txt(p,tokens[ci].h,swX,y+102,84,7,400,C.gray400,{align:'center'});
+  for (var ci = 0; ci < tokens.length; ci++) {
+    var swX = x + ci * 132;
+    var sw = rect(p, swX, y, 108, 108, tokens[ci].c, 16);
+    if (tokens[ci].n === 'White') { sw.strokes = [{ type: 'SOLID', color: C.gray200 }]; sw.strokeWeight = 1; }
+    colorNodes.push(sw);
+    colorNodes.push(await txt(p, tokens[ci].n, swX, y + 114, 108, 9, 600, C.gray600, { align: 'center' }));
+    colorNodes.push(await txt(p, tokens[ci].h, swX, y + 128, 108, 8, 400, C.gray400, { align: 'center' }));
   }
-  y+=140;
-  await txt(p,'ТИПОГРАФИКА',x,y,400,8,700,C.gray400,{ls:5}); y+=22;
-  var trows=[
-    {l:'Display · Black · 24px',sz:24,w:900,s:'Найди дизайнера'},
-    {l:'H1 · ExtraBold · 18px',sz:18,w:800,s:'Стиль интерьера'},
-    {l:'H2 · Bold · 14px',sz:14,w:700,s:'Выберите вариант'},
-    {l:'Body · Medium · 10px',sz:10,w:500,s:'Основной текст'},
-    {l:'Caption · 9px',sz:9,w:400,s:'Подсказка, метаданные'},
-    {l:'Label · Bold · 8px',sz:8,w:700,s:'МЕТКА · ШАГ 1'}
+  grp('01-colors', colorNodes, p);
+  y += 178;
+
+  // 02 ТИПОГРАФИКА
+  var typoNodes = [];
+  typoNodes.push(await txt(p, '02  ТИПОГРАФИКА — UNBOUNDED', x, y, 900, 10, 700, C.gray400, { ls: 5 }));
+  y += 30;
+  var typeRows = [
+    { label: 'Black / 900', str: 'Найди своего дизайнера', sz: 24, w: 900 },
+    { label: 'ExtraBold / 800', str: 'Заголовок раздела', sz: 18, w: 800 },
+    { label: 'Bold / 700', str: 'Кнопка · CTA · Акцент', sz: 14, w: 700 },
+    { label: 'SemiBold / 600', str: 'Подзаголовок · Лейбл', sz: 12, w: 600 },
+    { label: 'Medium / 500', str: 'Тело текста средний', sz: 11, w: 500 },
+    { label: 'Regular / 400', str: 'Подпись · Второстепенный', sz: 10, w: 400 }
   ];
-  for (var ti=0;ti<trows.length;ti++){
-    var tr=trows[ti];
-    await txt(p,tr.l,x,y+4,260,8,400,C.gray400);
-    await txt(p,tr.s,x+280,y,700,tr.sz,tr.w,C.black,{lineH:tr.sz*1.5});
-    y+=Math.max(tr.sz*1.5,26)+12;
+  for (var ti = 0; ti < typeRows.length; ti++) {
+    var tr = typeRows[ti];
+    typoNodes.push(await txt(p, tr.label, x, y + 4, 240, 8, 400, C.gray400));
+    typoNodes.push(await txt(p, tr.str, x + 250, y, 900, tr.sz, tr.w, C.black));
+    y += tr.sz + 28;
   }
-  y+=20;
-  await txt(p,'КНОПКИ',x,y,400,8,700,C.gray400,{ls:5}); y+=22;
-  rect(p,x,y,200,52,C.black,26);
-  await txtC(p,'Продолжить →',x,y+26,200,10,700,C.white,{align:'center'});
-  rect(p,x+220,y,200,52,C.accent,26);
-  await txtC(p,'Показать мастеров →',x+220,y+26,200,10,700,C.black,{align:'center'});
-  var s3=rect(p,x+440,y,160,52,C.white,26);
-  s3.strokes=[{type:'SOLID',color:C.black}];s3.strokeWeight=1.5;
-  await txtC(p,'Пропустить',x+440,y+26,160,10,600,C.black,{align:'center'});
-  y+=90;
-  await txt(p,'КНОПКИ СВАЙПА',x,y,400,8,700,C.gray400,{ls:5}); y+=22;
-  var nlK=rect(p,x,y,64,64,C.white,32);
-  nlK.strokes=[{type:'SOLID',color:C.gray200}];nlK.strokeWeight=1.5;
-  await txtC(p,'✕',x,y+32,64,20,700,C.gray400,{align:'center'});
-  await txt(p,'не моё',x,y+72,64,8,500,C.gray400,{align:'center'});
-  rect(p,x+80,y+14,36,36,C.gray100,18);
-  await txtC(p,'↺',x+80,y+32,36,14,500,C.gray400,{align:'center'});
-  var lkK=rect(p,x+132,y,64,64,C.accentL,32);
-  lkK.strokes=[{type:'SOLID',color:C.accent}];lkK.strokeWeight=1.5;
-  await txtC(p,'✓',x+132,y+32,64,22,700,C.black,{align:'center'});
-  await txt(p,'нравится',x+132,y+72,64,8,500,C.gray400,{align:'center'});
+  grp('02-typography', typoNodes, p);
+  y += 16;
+
+  // 03 КНОПКИ
+  var btnNodes = [];
+  btnNodes.push(await txt(p, '03  КНОПКИ', x, y, 400, 10, 700, C.gray400, { ls: 5 }));
+  y += 30;
+  var b1 = rect(p, x, y, 260, 56, C.black, 28); btnNodes.push(b1);
+  btnNodes.push(await txtC(p, 'Начать — это бесплатно', x, y + 28, 260, 11, 700, C.white, { align: 'center' }));
+  btnNodes.push(await txt(p, 'Primary', x, y + 64, 260, 8, 400, C.gray400, { align: 'center' }));
+  var b2 = rect(p, x + 280, y, 240, 56, C.accent, 28); btnNodes.push(b2);
+  btnNodes.push(await txtC(p, 'Показать мастеров →', x + 280, y + 28, 240, 11, 700, C.black, { align: 'center' }));
+  btnNodes.push(await txt(p, 'Accent', x + 280, y + 64, 240, 8, 400, C.gray400, { align: 'center' }));
+  var b3 = rect(p, x + 544, y, 200, 56, C.white, 28);
+  b3.strokes = [{ type: 'SOLID', color: C.black }]; b3.strokeWeight = 1.5; btnNodes.push(b3);
+  btnNodes.push(await txtC(p, 'Войти', x + 544, y + 28, 200, 11, 700, C.black, { align: 'center' }));
+  btnNodes.push(await txt(p, 'Outline', x + 544, y + 64, 200, 8, 400, C.gray400, { align: 'center' }));
+  var b4 = rect(p, x + 768, y, 200, 56, C.gray100, 28); btnNodes.push(b4);
+  btnNodes.push(await txtC(p, 'Пропустить', x + 768, y + 28, 200, 11, 500, C.gray600, { align: 'center' }));
+  btnNodes.push(await txt(p, 'Ghost', x + 768, y + 64, 200, 8, 400, C.gray400, { align: 'center' }));
+  var b5 = rect(p, x + 992, y, 56, 56, C.white, 28);
+  b5.strokes = [{ type: 'SOLID', color: C.gray200 }]; b5.strokeWeight = 1.5; btnNodes.push(b5);
+  btnNodes.push(await txtC(p, '↗', x + 992, y + 28, 56, 20, 500, C.black, { align: 'center' }));
+  btnNodes.push(await txt(p, 'Icon', x + 992, y + 64, 56, 8, 400, C.gray400, { align: 'center' }));
+  grp('03-buttons', btnNodes, p);
+  y += 108;
+
+  // 04 КНОПКИ СВАЙПА
+  var swipeNodes = [];
+  swipeNodes.push(await txt(p, '04  КНОПКИ СВАЙПА', x, y, 400, 10, 700, C.gray400, { ls: 5 }));
+  y += 30;
+  var nl2 = rect(p, x, y, 68, 68, C.redL, 34);
+  nl2.strokes = [{ type: 'SOLID', color: { r: 0.91, g: 0.75, b: 0.75 } }]; nl2.strokeWeight = 1.5;
+  swipeNodes.push(nl2);
+  swipeNodes.push(await txtC(p, '✘', x, y + 34, 68, 24, 700, C.black, { align: 'center' }));
+  swipeNodes.push(await txt(p, 'не нравится', x - 4, y + 76, 76, 8, 500, C.gray400, { align: 'center' }));
+  var skipBtn = rect(p, x + 96, y + 14, 40, 40, C.gray100, 20); swipeNodes.push(skipBtn);
+  swipeNodes.push(await txtC(p, '↺', x + 96, y + 34, 40, 16, 500, C.gray400, { align: 'center' }));
+  swipeNodes.push(await txt(p, 'пропустить', x + 88, y + 62, 56, 8, 500, C.gray400, { align: 'center' }));
+  var lk2 = rect(p, x + 160, y, 68, 68, C.accentL, 34);
+  lk2.strokes = [{ type: 'SOLID', color: C.accent }]; lk2.strokeWeight = 1.5; swipeNodes.push(lk2);
+  swipeNodes.push(await txtC(p, '✓', x + 160, y + 34, 68, 24, 700, C.black, { align: 'center' }));
+  swipeNodes.push(await txt(p, 'нравится', x + 160, y + 76, 68, 8, 500, C.gray400, { align: 'center' }));
+  grp('04-swipe-buttons', swipeNodes, p);
+  y += 120;
+
+  // 05 ТЕГИ
+  var tagNodes = [];
+  tagNodes.push(await txt(p, '05  ТЕГИ / ЧИПЫ', x, y, 400, 10, 700, C.gray400, { ls: 5 }));
+  y += 30;
+  var chips = [
+    { l: 'светлые тона', sel: true }, { l: 'минимализм', sel: true },
+    { l: 'лофт', sel: false }, { l: 'натур. матер.', sel: false },
+    { l: 'эко', sel: false }, { l: 'рабочая зона', sel: false }
+  ];
+  var cx2 = x;
+  for (var chi = 0; chi < chips.length; chi++) {
+    var cw = chips[chi].l.length * 7 + 24;
+    var ce = rect(p, cx2, y, cw, 32, chips[chi].sel ? C.black : C.white, 16);
+    ce.strokes = [{ type: 'SOLID', color: chips[chi].sel ? C.black : C.gray200 }]; ce.strokeWeight = 1.5;
+    tagNodes.push(ce);
+    tagNodes.push(await txtC(p, chips[chi].l, cx2, y + 16, cw, 9, chips[chi].sel ? 600 : 500, chips[chi].sel ? C.white : C.black, { align: 'center' }));
+    cx2 += cw + 10;
+  }
+  grp('05-tags', tagNodes, p);
+  y += 64;
+
+  // 06 БЕЙДЖИ
+  var badgeNodes = [];
+  badgeNodes.push(await txt(p, '06  БЕЙДЖИ', x, y, 400, 10, 700, C.gray400, { ls: 5 }));
+  y += 30;
+  var ba1 = rect(p, x, y, 148, 30, C.accent, 15); badgeNodes.push(ba1);
+  badgeNodes.push(await txtC(p, '94% совпадение', x, y + 15, 148, 9, 700, C.black, { align: 'center' }));
+  var ba2 = rect(p, x + 168, y, 128, 30, C.accentL, 8);
+  ba2.strokes = [{ type: 'SOLID', color: C.accent }]; ba2.strokeWeight = 1; badgeNodes.push(ba2);
+  badgeNodes.push(await txtC(p, '✓  НРАВИТСЯ', x + 168, y + 15, 128, 9, 700, C.black, { align: 'center' }));
+  var ba3 = rect(p, x + 316, y, 128, 30, C.redL, 8);
+  ba3.strokes = [{ type: 'SOLID', color: { r: 0.91, g: 0.75, b: 0.75 } }]; ba3.strokeWeight = 1; badgeNodes.push(ba3);
+  badgeNodes.push(await txtC(p, '✘  НЕ НРАВИТСЯ', x + 316, y + 15, 128, 9, 700, C.black, { align: 'center' }));
+  var ba4 = rect(p, x + 464, y, 196, 30, C.white, 15);
+  ba4.strokes = [{ type: 'SOLID', color: C.gray200 }]; ba4.strokeWeight = 1; badgeNodes.push(ba4);
+  badgeNodes.push(await txtC(p, '📍 Москва · онлайн', x + 464, y + 15, 196, 8, 500, C.gray600, { align: 'center' }));
+  grp('06-badges', badgeNodes, p);
+  y += 72;
+
+  // 07 СТАТУС-БАР
+  var sbKitNodes = [];
+  sbKitNodes.push(await txt(p, '07  СТАТУС-БАР + DYNAMIC ISLAND', x, y, 700, 10, 700, C.gray400, { ls: 5 }));
+  y += 30;
+  var sbF1 = mkFrame(p, x, y, W, SB_H + 4, C.black, 10);
+  var diD1 = figma.createRectangle();
+  diD1.x = W / 2 - PHONE.diW / 2; diD1.y = PHONE.diOffsetY;
+  diD1.resize(PHONE.diW, PHONE.diH); diD1.cornerRadius = PHONE.diR;
+  diD1.fills = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0 } }];
+  sbF1.appendChild(diD1); await statusBar(sbF1, false); sbKitNodes.push(sbF1);
+  var sbF2 = mkFrame(p, x + W + 24, y, W, SB_H + 4, C.white, 10);
+  sbF2.strokes = [{ type: 'SOLID', color: C.gray200 }]; sbF2.strokeWeight = 1;
+  var diD2 = figma.createRectangle();
+  diD2.x = W / 2 - PHONE.diW / 2; diD2.y = PHONE.diOffsetY;
+  diD2.resize(PHONE.diW, PHONE.diH); diD2.cornerRadius = PHONE.diR;
+  diD2.fills = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0 } }];
+  sbF2.appendChild(diD2); await statusBar(sbF2, true); sbKitNodes.push(sbF2);
+  sbKitNodes.push(await txt(p, 'На тёмном', x, y + SB_H + 12, W, 8, 400, C.gray400, { align: 'center' }));
+  sbKitNodes.push(await txt(p, 'На светлом', x + W + 24, y + SB_H + 12, W, 8, 400, C.gray400, { align: 'center' }));
+  grp('07-statusbar', sbKitNodes, p);
+  y += SB_H + 52;
+
+  // 08 HOME INDICATOR
+  var hiNodes = [];
+  hiNodes.push(await txt(p, '08  HOME INDICATOR', x, y, 400, 10, 700, C.gray400, { ls: 5 }));
+  y += 30;
+  var hiD = figma.createRectangle();
+  hiD.x = x; hiD.y = y; hiD.resize(134, 5); hiD.cornerRadius = 3;
+  hiD.fills = [{ type: 'SOLID', color: C.black, opacity: 0.2 }];
+  p.appendChild(hiD); hiNodes.push(hiD);
+  hiNodes.push(await txt(p, '134×5 · opacity 20% · bottom: 10px', x, y + 13, 400, 8, 400, C.gray400));
+  grp('08-home-indicator', hiNodes, p);
+  y += 52;
+
+  // 09 ПРОГРЕСС
+  var pbNodes = [];
+  pbNodes.push(await txt(p, '09  ПРОГРЕСС-БАР', x, y, 400, 10, 700, C.gray400, { ls: 5 }));
+  y += 30;
+  var pbF = mkFrame(p, x, y, W, 20, C.white, 4);
+  progressBar(pbF, 5, 3, 8);
+  pbNodes.push(pbF);
+  pbNodes.push(await txt(p, '3 из 5 шагов', x, y + 28, W, 8, 400, C.gray400, { align: 'center' }));
+  grp('09-progressbar', pbNodes, p);
+  y += 68;
+
+  // 10 КАРТОЧКА МАСТЕРА
+  var cardKitNodes = [];
+  cardKitNodes.push(await txt(p, '10  КАРТОЧКА МАСТЕРА', x, y, 600, 10, 700, C.gray400, { ls: 5 }));
+  y += 30;
+  var mCW = 340, mCH = 460;
+  var mCard = mkFrame(p, x, y, mCW, mCH, C.white, 22);
+  mCard.effects = [{ type: 'DROP_SHADOW', color: { r: 0, g: 0, b: 0, a: 0.09 }, offset: { x: 0, y: 4 }, radius: 20, spread: 0, visible: true, blendMode: 'NORMAL' }];
+  var mClrs = ['#f0ece4', '#ddd5c8', '#b8a88c'];
+  var mBw = (mCW - 12) / 3;
+  for (var mc = 0; mc < 3; mc++) rect(mCard, 4 + mc * (mBw + 4), 4, mBw, 180, hex2rgb(mClrs[mc]), 14);
+  gradRect(mCard, 0, 150, mCW, 60, 0, 0.65);
+  rect(mCard, 14, 14, 132, 28, C.accent, 14);
+  await txtC(mCard, '94% совпадение', 14, 28, 132, 8, 700, C.black, { align: 'center' });
+  rect(mCard, 16, 210, 44, 44, C.black, 22);
+  await txtC(mCard, 'АС', 16, 232, 44, 12, 800, C.accent, { align: 'center' });
+  await txt(mCard, 'Анна Соколова', 70, 212, mCW - 86, 12, 800, C.black);
+  await txt(mCard, 'Москва · 6 лет', 70, 230, mCW - 86, 9, 400, C.gray400);
+  await txt(mCard, '★ 4.9  127 отзывов', 70, 244, mCW - 86, 8, 500, C.black);
+  rect(mCard, 16, 276, mCW - 32, 1, C.gray200);
+  await txt(mCard, '4 500 ₽/м²', 16, 288, (mCW - 32) / 2, 12, 800, C.black);
+  await txt(mCard, '47 проектов', mCW / 2, 288, (mCW - 32) / 2, 10, 600, C.gray400, { align: 'right' });
+  await txt(mCard, 'стоимость/м²', 16, 305, (mCW - 32) / 2, 7, 400, C.gray400);
+  cardKitNodes.push(mCard);
+  grp('10-master-card', cardKitNodes, p);
+  y += mCH + 52;
+
+  // 11 СТИЛЬ-КАРТОЧКИ
+  var styleKitNodes = [];
+  styleKitNodes.push(await txt(p, '11  СТИЛЬ-КАРТОЧКИ', x, y, 700, 10, 700, C.gray400, { ls: 5 }));
+  y += 30;
+  var scW = 210, scH = 160;
+  var styleColors4 = [
+    ['#f5f0e8', '#e8ddd0', '#d4c4b0', '#c9b99a', '#a89070', '#6b5040'],
+    ['#f8f8f8', '#e8e8e8', '#d0d0d0', '#b0b0b0', '#787878', '#2c2c2c'],
+    ['#c4bdb5', '#a09890', '#786050', '#584840', '#3c3028', '#1e1814'],
+    ['#f0f4f8', '#c8d8e8', '#7090b0', '#3a5f80', '#1a3a58', '#c9f542']
+  ];
+  var styleNames4 = ['Скандинавский', 'Минимализм', 'Лофт', 'Современный'];
+  for (var si3 = 0; si3 < 4; si3++) {
+    var scX2 = x + si3 * (scW + 16);
+    var sc4 = mkFrame(p, scX2, y, scW, scH, hex2rgb(styleColors4[si3][0]), 14);
+    var sbw2 = (scW - 9) / 3, sbh2 = (scH - 9) / 2;
+    for (var sr2 = 0; sr2 < 2; sr2++)
+      for (var sc5 = 0; sc5 < 3; sc5++)
+        rect(sc4, 3 + sc5 * (sbw2 + 3), 3 + sr2 * (sbh2 + 3), sbw2, sbh2,
+          hex2rgb(styleColors4[si3][Math.min(sr2 * 3 + sc5, 5)]), 8);
+    gradRect(sc4, 0, scH - 64, scW, 64, 0, 0.85);
+    await txt(sc4, styleNames4[si3], 10, scH - 34, scW - 20, 10, 800, C.white);
+    styleKitNodes.push(sc4);
+    styleKitNodes.push(await txt(p, styleNames4[si3], scX2, y + scH + 8, scW, 8, 400, C.gray400, { align: 'center' }));
+  }
+  grp('11-style-cards', styleKitNodes, p);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Карта экранов
+// SPLASH
 // ─────────────────────────────────────────────────────────────────────────────
-var SCREEN_MAP={
-  ui_kit:     {name:'00 — UI Kit',         fn:function(p){return buildUIKit(p);},  w:1200,h:980},
-  splash:     {name:'01 — Splash',         fn:function(p){return buildSplash(p);}},
-  style_scan: {name:'02a — Скандинавский', fn:function(p){return buildStyleSwipe(p,0,'like');}},
-  style_min:  {name:'02b — Минимализм',    fn:function(p){return buildStyleSwipe(p,1,'neutral');}},
-  style_loft: {name:'02c — Лофт',          fn:function(p){return buildStyleSwipe(p,2,'nope');}},
-  style_mod:  {name:'02d — Современный',   fn:function(p){return buildStyleSwipe(p,3,'neutral');}},
-  style_class:{name:'02e — Классика',      fn:function(p){return buildStyleSwipe(p,4,'like');}},
-  style_eco:  {name:'02f — Эко/Бохо',      fn:function(p){return buildStyleSwipe(p,5,'neutral');}},
-  style_japdi:{name:'02g — Japandi',       fn:function(p){return buildStyleSwipe(p,6,'nope');}},
-  style_art:  {name:'02h — Арт-деко',      fn:function(p){return buildStyleSwipe(p,7,'like');}},
-  behavior:   {name:'03 — Поведение',      fn:function(p){return buildBehavior(p);}},
-  budget:     {name:'04 — Бюджет',         fn:function(p){return buildBudget(p);}},
-  area:       {name:'05 — Площадь',        fn:function(p){return buildArea(p);}},
-  features:   {name:'06 — Критерии',       fn:function(p){return buildFeatures(p);}},
-  result_1:   {name:'07a — Алина',         fn:function(p){return buildResult(p,0);}},
-  result_2:   {name:'07b — Михаил',        fn:function(p){return buildResult(p,1);}},
-  profile_1:  {name:'08a — Профиль Алина', fn:function(p){return buildProfile(p,0);}},
-  profile_2:  {name:'08b — Профиль Михаил',fn:function(p){return buildProfile(p,1);}}
+async function buildSplash(p) {
+  sf(p, C.cream);
+
+  // ── Декоративные блоки (правый верхний угол) ─────────────────────────────
+  // Было: один прямоугольник C.cream (фактически белый/кремовый — не виден)
+  // Исправлено: заменён на C.gray200 (лавандово-серый), хорошо виден на фоне
+  var dTop = SB_H + 4;
+  var decoNodes = [];
+  decoNodes.push(rect(p, 234, dTop,      80, 80, C.accent,  16));         // зелёный
+  decoNodes.push(rect(p, 322, dTop,      58, 58, C.black,   14));         // чёрный
+  decoNodes.push(rect(p, 234, dTop + 90, 58, 42, C.gray200, 10));         // серый
+  // БЫЛ C.cream (почти белый на кремовом фоне) → теперь C.gray400 (тёмно-серый)
+  decoNodes.push(rect(p, 298, dTop + 68, 82, 34, C.gray400, 10, 0.55));  // серый акцент
+  grp('deco', decoNodes, p);
+
+  await statusBar(p, true);
+
+  var y = SB_H + 48;
+  var logoNodes = [];
+  logoNodes.push(rect(p, SIDE, y, 48, 48, C.black, 14));
+  logoNodes.push(await txtC(p, 'R', SIDE, y + 24, 48, 17, 900, C.accent, { align: 'center' }));
+  logoNodes.push(await txt(p, 'REMATCH', SIDE + 58, y + 17, 220, 14, 800, C.black, { ls: 4 }));
+  grp('logo', logoNodes, p);
+  y += 48 + 64;
+
+  var heroNodes = [];
+  heroNodes.push(await txt(p, 'Найди своего\nдизайнера\nза 2 минуты', SIDE, y, CW, 26, 900, C.black, { lineH: 44 }));
+  y += 44 * 3 + 12;
+  heroNodes.push(rect(p, SIDE, y, 64, 4, C.accent, 2));
+  y += 4 + 28;
+  heroNodes.push(await txt(p, 'Покажи интерьеры которые нравятся —\nмы подберём дизайнеров с похожими\nреализованными проектами', SIDE, y, CW, 10, 400, C.gray400, { lineH: 18 }));
+  grp('hero-text', heroNodes, p);
+
+  var ctaNodes = [];
+  ctaNodes.push(rect(p, SIDE, ctaTopY(), CW, 56, C.black, 28));
+  ctaNodes.push(await txtC(p, 'Начать — это бесплатно', SIDE, ctaTopY() + 28, CW, 11, 700, C.white, { align: 'center' }));
+  ctaNodes.push(await txt(p, 'Уже есть аккаунт? Войти', SIDE, ctaTopY() + 64, CW, 10, 400, C.gray400, { align: 'center' }));
+  grp('cta', ctaNodes, p);
+
+  homeBar(p);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// СВАЙП СТИЛЯ
+// buildStyleSwipe — карточка с цветными блоками
+// Исправления:
+//   1. Карточка уменьшена на 10px снизу (cardReduceBottom = 10)
+//   2. Подложка под названием/описанием — белая полупрозрачная, внизу карточки
+// ─────────────────────────────────────────────────────────────────────────────
+async function buildStyleSwipe(p, idx, state) {
+  state = state || 'neutral';
+  var st = STYLES[idx];
+  sf(p, C.white);
+  await statusBar(p, true);
+
+  var y = SB_H + 12;
+
+  // ── Шапка ──────────────────────────────────────────────────────────────────
+  var headerNodes = [];
+  headerNodes.push(await txt(p, (idx + 1) + ' / ' + STYLES.length, 0, y, W, 8, 600, C.gray400, { align: 'center', ls: 3 }));
+  y += 8 + 12;
+  headerNodes.push(await txt(p, 'Нравится этот стиль?', SIDE, y, CW, 14, 800, C.black, { lineH: 22 }));
+  y += 22 + 10;
+  grp('header', headerNodes, p);
+
+  var sCY = swipeCY();       // 764
+  var btnTop  = sCY - 34;   // 730
+  var cardEnd = btnTop - 14; // 716
+
+  var tagsH = 26 + 10;
+  var cardY = y;
+
+  var cardReduceBottom = 10;
+  var cH = cardEnd - tagsH - cardY - cardReduceBottom;
+  if (cH < 80) cH = 80;
+
+  var cW = CW;
+
+  // ── Карточка ───────────────────────────────────────────────────────────────
+  var card = mkFrame(p, SIDE, cardY, cW, cH, hex2rgb(st.c[0]), 22);
+
+  var cols = 3, rows = 2, g = 3;
+  var bW2 = (cW - g * (cols + 1)) / cols;
+  var bH2 = (cH - g * (rows + 1)) / rows;
+
+  // Цветные плитки
+  var tileNodes = [];
+  for (var r = 0; r < rows; r++) {
+    for (var c = 0; c < cols; c++) {
+      tileNodes.push(
+        rect(card, g + c * (bW2 + g), g + r * (bH2 + g), bW2, bH2,
+          hex2rgb(st.c[Math.min(r * cols + c, st.c.length - 1)]), 12)
+      );
+    }
+  }
+  grp('color-tiles', tileNodes, card);
+
+  // ── Подложка с названием/описанием ─────────────────────────────────────────
+  // Нижний край плиток нижнего ряда:
+  // tileBottom = g + bH2 + g + bH2 + g = g*3 + bH2*2
+  var tileBottom = g * 3 + bH2 * 2;
+
+  // Текст: название ~18px + описание ~2 строки*13px = ~44px + отступы
+  var labelPadV = 10; // вертикальный паддинг внутри подложки
+  var nameH    = 18;
+  var descH    = 26;  // 2 строки × 13px
+  var labelBgH = labelPadV + nameH + 6 + descH + labelPadV; // ≈ 72px
+
+  // Верх подложки = низ плиток + 8px (минимальный отступ)
+  var labelBgY = tileBottom + 8;
+
+  // Если подложка не влезает — поджимаем от низа карточки с отступом 4px
+  if (labelBgY + labelBgH > cH - 4) {
+    labelBgY = cH - labelBgH - 4;
+  }
+
+  var labelBgNodes = [];
+  var overlay = figma.createRectangle();
+  overlay.x = 4;
+  overlay.y = labelBgY;
+  overlay.resize(cW - 8, labelBgH);
+  overlay.cornerRadius = 14; // скруглённые углы
+  overlay.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 }, opacity: 0.88 }];
+  card.appendChild(overlay);
+  labelBgNodes.push(overlay);
+
+  var textX = 14;
+  var nameT = await txt(
+    card, st.name,
+    textX, labelBgY + labelPadV,
+    cW - 28, 13, 800, C.black, { lineH: 18 }
+  );
+  labelBgNodes.push(nameT);
+
+  var descT = await txt(
+    card, st.desc,
+    textX, labelBgY + labelPadV + nameH + 6,
+    cW - 28, 8, 400, C.gray400, { lineH: 13 }
+  );
+  labelBgNodes.push(descT);
+
+  grp('style-label', labelBgNodes, card);
+
+  // ── Бейдж состояния ────────────────────────────────────────────────────────
+  if (state === 'like') {
+    var likeNodes = [];
+    var lb = rect(card, cW - 134, 12, 120, 28, C.accentL, 8);
+    lb.strokes = [{ type: 'SOLID', color: C.accent }]; lb.strokeWeight = 1;
+    likeNodes.push(lb);
+    likeNodes.push(await txtC(card, '✓  НРАВИТСЯ', cW - 134, 26, 120, 9, 700, C.black, { align: 'center' }));
+    grp('badge-like', likeNodes, card);
+  } else if (state === 'nope') {
+    var nopeNodes = [];
+    var nb = rect(card, 14, 12, 128, 28, C.redL, 8);
+    nb.strokes = [{ type: 'SOLID', color: { r: 0.91, g: 0.75, b: 0.75 } }]; nb.strokeWeight = 1;
+    nopeNodes.push(nb);
+    nopeNodes.push(await txtC(card, '✘  НЕ НРАВИТСЯ', 14, 26, 128, 9, 700, C.black, { align: 'center' }));
+    grp('badge-nope', nopeNodes, card);
+  }
+
+  // ── Теги ───────────────────────────────────────────────────────────────────
+  var tagsY = cardY + cH + 10;
+  var tagRowNodes = [];
+  var tgX2 = SIDE;
+  for (var ti2 = 0; ti2 < st.tags.length; ti2++) {
+    var tgW = st.tags[ti2].length * 7 + 24;
+    var tg = rect(p, tgX2, tagsY, tgW, 26, C.white, 13);
+    tg.strokes = [{ type: 'SOLID', color: C.gray200 }]; tg.strokeWeight = 1;
+    tagRowNodes.push(tg);
+    tagRowNodes.push(await txtC(p, st.tags[ti2], tgX2, tagsY + 13, tgW, 9, 500, C.gray400, { align: 'center' }));
+    tgX2 += tgW + 8;
+  }
+  grp('style-tags', tagRowNodes, p);
+
+  await swipeButtons(p, sCY);
+  homeBar(p);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ПОВЕДЕНИЕ
+// ─────────────────────────────────────────────────────────────────────────────
+async function buildBehavior(p) {
+  sf(p, C.white);
+  await statusBar(p, true);
+  var y = SB_H + 8;
+  y = progressBar(p, 5, 1, y); y += 16;
+
+  var headerNodes = [];
+  headerNodes.push(await txt(p, 'ШАГ 1 ИЗ 5', SIDE, y, CW, 8, 600, C.gray400, { ls: 4 })); y += 8 + 14;
+  headerNodes.push(await txt(p, 'Как вы принимаете\nрешения?', SIDE, y, CW, 15, 800, C.black, { lineH: 24 })); y += 48 + 12;
+  headerNodes.push(await txt(p, 'Выберите одно — то, что ближе', SIDE, y, CW, 9, 400, C.gray400)); y += 9 + 18;
+  grp('header', headerNodes, p);
+
+  var items = [
+    { icon: '🖼', txt: 'Хожу по шоурумам' },
+    { icon: '📱', txt: 'Pinterest / Instagram' },
+    { icon: '💬', txt: 'Советуюсь с другими' },
+    { icon: '🔍', txt: 'Долго сравниваю' },
+    { icon: '⚡', txt: 'Решаю по ощущению' }
+  ];
+  var rowH = 56;
+  var allRowNodes = [];
+  for (var i = 0; i < items.length; i++) {
+    var sel = i === 1;
+    var rowNodes = [];
+    var row = rect(p, SIDE, y, CW, rowH, sel ? C.gray100 : C.white, 14);
+    row.strokes = [{ type: 'SOLID', color: sel ? C.black : C.gray200 }]; row.strokeWeight = 1.5;
+    rowNodes.push(row);
+    rowNodes.push(await txtC(p, items[i].icon, SIDE + 14, y + rowH / 2, 26, 18, 400, C.black, { align: 'center' }));
+    rowNodes.push(await txtC(p, items[i].txt, SIDE + 50, y + rowH / 2, CW - 78, 11, 500, C.black));
+    if (sel) {
+      var chkNodes = await checkmark(p, SIDE, y, CW, rowH);
+      rowNodes = rowNodes.concat(chkNodes);
+    }
+    grp('row-' + i, rowNodes, p);
+    allRowNodes.push(grp('row-' + i, [], p) || rowNodes); // собираем для внешней группы
+    y += rowH + 8;
+  }
+
+  var ctaN = [];
+  ctaN.push(rect(p, SIDE, ctaTopY(), CW, 56, C.black, 28));
+  ctaN.push(await txtC(p, 'Далее →', SIDE, ctaTopY() + 28, CW, 11, 700, C.white, { align: 'center' }));
+  grp('cta', ctaN, p);
+  homeBar(p);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// БЮДЖЕТ
+// ─────────────────────────────────────────────────────────────────────────────
+async function buildBudget(p) {
+  sf(p, C.white);
+  await statusBar(p, true);
+  var y = SB_H + 8;
+  y = progressBar(p, 5, 2, y); y += 16;
+
+  var headerNodes = [];
+  headerNodes.push(await txt(p, 'ШАГ 2 ИЗ 5', SIDE, y, CW, 8, 600, C.gray400, { ls: 4 })); y += 8 + 14;
+  headerNodes.push(await txt(p, 'Бюджет на дизайн-проект', SIDE, y, CW, 15, 800, C.black, { lineH: 24 })); y += 24 + 12;
+  headerNodes.push(await txt(p, 'Поможет подобрать мастера нужного уровня', SIDE, y, CW, 9, 400, C.gray400)); y += 9 + 18;
+  grp('header', headerNodes, p);
+
+  var list = [
+    { p: 'до 80 000 ₽', d: 'Планировка и спецификации' },
+    { p: '80 000 – 150 000 ₽', d: 'Полный проект, 3D' },
+    { p: '150 000 – 300 000 ₽', d: 'Проект с авторским надзором' },
+    { p: '300 000 – 600 000 ₽', d: 'Комплексный под ключ' },
+    { p: 'от 600 000 ₽', d: 'Премиум, эксклюзив' },
+    { p: 'Пока не знаю', d: 'Расскажем о вариантах' }
+  ];
+  var rowH = 58;
+  for (var i = 0; i < list.length; i++) {
+    var sel = i === 2;
+    var rowNodes = [];
+    var row = rect(p, SIDE, y, CW, rowH, sel ? C.gray100 : C.white, 14);
+    row.strokes = [{ type: 'SOLID', color: sel ? C.black : C.gray200 }]; row.strokeWeight = 1.5;
+    rowNodes.push(row);
+    rowNodes.push(await txt(p, list[i].p, SIDE + 16, y + 12, CW - 60, 11, 700, C.black));
+    rowNodes.push(await txt(p, list[i].d, SIDE + 16, y + 30, CW - 60, 9, 400, C.gray400));
+    if (sel) {
+      var chkNodes = await checkmark(p, SIDE, y, CW, rowH);
+      rowNodes = rowNodes.concat(chkNodes);
+    }
+    grp('budget-row-' + i, rowNodes, p);
+    y += rowH + 8;
+  }
+  homeBar(p);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ПЛОЩАДЬ
+// ─────────────────────────────────────────────────────────────────────────────
+async function buildArea(p) {
+  sf(p, C.white);
+  await statusBar(p, true);
+  var y = SB_H + 8;
+  y = progressBar(p, 5, 3, y); y += 16;
+
+  var headerNodes = [];
+  headerNodes.push(await txt(p, 'ШАГ 3 ИЗ 5', SIDE, y, CW, 8, 600, C.gray400, { ls: 4 })); y += 8 + 14;
+  headerNodes.push(await txt(p, 'Площадь квартиры', SIDE, y, CW, 15, 800, C.black, { lineH: 24 })); y += 24 + 12;
+  headerNodes.push(await txt(p, 'Примерно — для подбора специализации', SIDE, y, CW, 9, 400, C.gray400)); y += 9 + 24;
+  grp('header', headerNodes, p);
+
+  var areas = [
+    { n: 'до 35 м²', l: 'студия' }, { n: '35–55 м²', l: '1–2 комн.' },
+    { n: '55–80 м²', l: '2–3 комн.' }, { n: 'от 80 м²', l: 'большая' }
+  ];
+  var cellW = (CW - 12) / 2, cellH = 110;
+  var allCellNodes = [];
+  for (var i = 0; i < 4; i++) {
+    var col = i % 2, rowN = Math.floor(i / 2);
+    var cx2 = SIDE + col * (cellW + 12), cy2 = y + rowN * (cellH + 12);
+    var sel = i === 1;
+    var cellNodes = [];
+    var cell = rect(p, cx2, cy2, cellW, cellH, sel ? C.gray100 : C.white, 16);
+    cell.strokes = [{ type: 'SOLID', color: sel ? C.black : C.gray200 }]; cell.strokeWeight = 1.5;
+    cellNodes.push(cell);
+    cellNodes.push(await txtC(p, areas[i].n, cx2 + 8, cy2 + cellH / 2 - 8, cellW - 16, 14, 800, C.black, { align: 'center' }));
+    cellNodes.push(await txtC(p, areas[i].l, cx2 + 8, cy2 + cellH / 2 + 12, cellW - 16, 9, 500, C.gray400, { align: 'center' }));
+    if (sel) {
+      var chkSz = 22;
+      var chkX = cx2 + cellW - 8 - chkSz;
+      var chkY2 = cy2 + 8;
+      var chkBg = rect(p, chkX, chkY2, chkSz, chkSz, C.black, 6);
+      cellNodes.push(chkBg);
+      cellNodes.push(await txtC(p, '✓', chkX, chkY2 + chkSz / 2, chkSz, 10, 800, C.white, { align: 'center' }));
+    }
+    grp('area-cell-' + i, cellNodes, p);
+  }
+  homeBar(p);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// КРИТЕРИИ
+// ─────────────────────────────────────────────────────────────────────────────
+async function buildFeatures(p) {
+  sf(p, C.white);
+  await statusBar(p, true);
+  var y = SB_H + 8;
+  y = progressBar(p, 5, 4, y); y += 16;
+
+  var headerNodes = [];
+  headerNodes.push(await txt(p, 'ШАГ 4 ИЗ 5', SIDE, y, CW, 8, 600, C.gray400, { ls: 4 })); y += 8 + 14;
+  headerNodes.push(await txt(p, 'Что важно в интерьере?', SIDE, y, CW, 15, 800, C.black, { lineH: 24 })); y += 24 + 12;
+  headerNodes.push(await txt(p, 'Выберите всё, что важно для вас', SIDE, y, CW, 9, 400, C.gray400)); y += 9 + 16;
+  grp('header', headerNodes, p);
+
+  var tags = [
+    { t: 'хранение', s: true }, { t: 'свет', s: false }, { t: 'эргономика', s: true },
+    { t: 'эко', s: false }, { t: 'цветовые акценты', s: true }, { t: 'простор', s: false },
+    { t: 'уют', s: true }, { t: 'минимализм', s: false }, { t: 'рабочая зона', s: true },
+    { t: 'детская', s: false }, { t: 'текстиль', s: false }, { t: 'высокие потолки', s: false },
+    { t: 'открытая кухня', s: false }, { t: 'гардеробная', s: true }, { t: 'тёмные тона', s: false },
+    { t: 'светлые тона', s: true }, { t: 'панорамные окна', s: false }, { t: 'умный дом', s: false },
+    { t: 'барная стойка', s: false }, { t: 'зонирование', s: true }, { t: 'арт-объекты', s: false },
+    { t: 'мягкие формы', s: false }, { t: 'геометрия', s: false }, { t: 'природные мат.', s: true }
+  ];
+  var rx = SIDE, ry = y;
+  var tagNodes = [];
+  for (var i = 0; i < tags.length; i++) {
+    var tw = tags[i].t.length * 6.5 + 22;
+    if (rx + tw > SIDE + CW) { rx = SIDE; ry += 38; }
+    var te = rect(p, rx, ry, tw, 30, tags[i].s ? C.black : C.white, 15);
+    te.strokes = [{ type: 'SOLID', color: tags[i].s ? C.black : C.gray200 }]; te.strokeWeight = 1.5;
+    tagNodes.push(te);
+    tagNodes.push(await txtC(p, tags[i].t, rx, ry + 15, tw, 8, tags[i].s ? 600 : 500, tags[i].s ? C.white : C.black, { align: 'center' }));
+    rx += tw + 7;
+  }
+  grp('tags-grid', tagNodes, p);
+
+  var ctaN = [];
+  ctaN.push(rect(p, SIDE, ctaTopY(), CW, 56, C.accent, 28));
+  ctaN.push(await txtC(p, 'Показать мастеров →', SIDE, ctaTopY() + 28, CW, 11, 700, C.black, { align: 'center' }));
+  grp('cta', ctaN, p);
+  homeBar(p);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// КАРТОЧКА МАСТЕРА (свайп)
+// ─────────────────────────────────────────────────────────────────────────────
+async function buildResult(p, mi) {
+  var m = MASTERS[mi];
+  sf(p, C.white);
+  await statusBar(p, true);
+  var y = SB_H + 14;
+
+  var counterNodes = [];
+  counterNodes.push(await txt(p, 'СОВПАДЕНИЯ', SIDE, y, 140, 8, 600, C.gray400, { ls: 4 }));
+  var total = MASTERS.length;
+  for (var di = 0; di < total; di++)
+    counterNodes.push(rect(p, W - SIDE - (total - di) * 18, y, 12, 12, di < m.idx ? C.accent : C.gray200, 6));
+  grp('counter', counterNodes, p);
+  y += 12 + 14;
+
+  var sCY = swipeCY();
+  var btnTop  = sCY - 34;
+  var cardEnd = btnTop - 14;
+  var cH = cardEnd - y;
+  var cW = CW;
+  if (cH < 120) cH = 120;
+
+  var card = mkFrame(p, SIDE, y, cW, cH, C.white, 22);
+  card.effects = [{ type: 'DROP_SHADOW', color: { r: 0, g: 0, b: 0, a: 0.08 }, offset: { x: 0, y: 4 }, radius: 24, spread: 0, visible: true, blendMode: 'NORMAL' }];
+
+  var mH = Math.round(cH * 0.40);
+  var cols = 3, g = 3, bW3 = (cW - g * (cols + 1)) / cols;
+  var topTilesNodes = [];
+  for (var ci = 0; ci < cols; ci++)
+    topTilesNodes.push(rect(card, g + ci * (bW3 + g), g, bW3, mH - g, hex2rgb(m.bg[ci]), 14));
+  grp('top-tiles', topTilesNodes, card);
+
+  gradRect(card, 0, mH - 60, cW, 80, 0, 0.6);
+
+  var matchNodes = [];
+  matchNodes.push(rect(card, 14, 14, 132, 28, C.accent, 14));
+  matchNodes.push(await txtC(card, m.match + '% совпадение', 14, 28, 132, 8, 700, C.black, { align: 'center' }));
+  grp('match-badge', matchNodes, card);
+
+  var infoY = mH + 18;
+  var avatarNodes = [];
+  avatarNodes.push(rect(card, 16, infoY, 44, 44, C.black, 22));
+  avatarNodes.push(await txtC(card, m.initials, 16, infoY + 22, 44, 12, 800, C.accent, { align: 'center' }));
+  grp('avatar', avatarNodes, card);
+
+  var nameInfoNodes = [];
+  nameInfoNodes.push(await txt(card, m.firstName + ' ' + m.lastName, 70, infoY + 2, cW - 86, 12, 800, C.black));
+  nameInfoNodes.push(await txt(card, m.city + ' · ' + m.exp, 70, infoY + 18, cW - 86, 9, 400, C.gray400));
+  nameInfoNodes.push(await txt(card, '★ ' + m.rating + '  ' + m.reviews, 70, infoY + 32, cW - 86, 8, 500, C.black));
+  grp('name-info', nameInfoNodes, card);
+  infoY += 44 + 14;
+
+  rect(card, 16, infoY, cW - 32, 1, C.gray200); infoY += 1 + 12;
+
+  var priceNodes = [];
+  priceNodes.push(await txt(card, m.price, 16, infoY, (cW - 32) / 2, 12, 800, C.black));
+  priceNodes.push(await txt(card, m.projects + ' проектов', cW / 2, infoY, (cW - 32) / 2, 10, 600, C.gray400, { align: 'right' }));
+  priceNodes.push(await txt(card, 'стоимость/м²', 16, infoY + 16, (cW - 32) / 2, 7, 400, C.gray400));
+  grp('price-info', priceNodes, card);
+  infoY += 16 + 14 + 10;
+
+  await txt(card, 'ПОЧЕМУ ' + m.firstName.toUpperCase(), 16, infoY, 220, 7, 700, C.gray400, { ls: 4 });
+  infoY += 7 + 10;
+  var tgX3 = 16;
+  var whyNodes = [];
+  for (var wyi = 0; wyi < m.why.length; wyi++) {
+    var wt = m.why[wyi], wtW = wt.length * 6 + 20;
+    if (tgX3 + wtW > cW - 16) { tgX3 = 16; infoY += 28; }
+    var wtBg = rect(card, tgX3, infoY, wtW, 22, C.gray100, 11);
+    whyNodes.push(wtBg);
+    whyNodes.push(await txtC(card, wt, tgX3, infoY + 11, wtW, 8, 500, C.gray600, { align: 'center' }));
+    tgX3 += wtW + 6;
+  }
+  grp('why-tags', whyNodes, card);
+
+  await swipeButtons(p, sCY);
+  homeBar(p);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ПРОФИЛЬ МАСТЕРА
+// ─────────────────────────────────────────────────────────────────────────────
+async function buildProfile(p, mi) {
+  var m = MASTERS[mi];
+  sf(p, C.white);
+
+  var ctaPanelH = 72;
+  var ctaPanelY = H - HOME_H - ctaPanelH + 11;
+
+  // ── Герой ─────────────────────────────────────────────────────────────────
+  var heroH = 230;
+  var hero = mkFrame(p, 0, 0, W, heroH, C.black, 0);
+  var cols = 3, g = 3, bW4 = (W - g * (cols + 1)) / cols;
+  var heroTiles = [];
+  for (var ci = 0; ci < cols; ci++)
+    heroTiles.push(rect(hero, g + ci * (bW4 + g), g, bW4, heroH - g, hex2rgb(m.bg[ci]), 10));
+  grp('hero-tiles', heroTiles, hero);
+  gradRect(hero, 0, heroH - 150, W, 150, 0, 0.85);
+
+  await statusBar(hero, false);
+
+  var backBtnNodes = [];
+  backBtnNodes.push(rect(hero, SIDE, SB_H + 4, 36, 36, C.black, 18, 0.5));
+  backBtnNodes.push(await txtC(hero, '←', SIDE, SB_H + 22, 36, 15, 700, C.white, { align: 'center' }));
+  grp('back-btn', backBtnNodes, hero);
+
+  var heroMatchNodes = [];
+  heroMatchNodes.push(rect(hero, SIDE, heroH - 44, 148, 28, C.accent, 14));
+  heroMatchNodes.push(await txtC(hero, m.match + '% совпадение', SIDE, heroH - 30, 148, 8, 700, C.black, { align: 'center' }));
+  grp('hero-match', heroMatchNodes, hero);
+
+  var y = heroH + 18;
+
+  var nameNodes = [];
+  nameNodes.push(await txt(p, m.firstName + ' ' + m.lastName, SIDE, y, CW - 110, 16, 800, C.black, { lineH: 24 }));
+  nameNodes.push(await txt(p, m.price, W - SIDE - 100, y, 100, 12, 700, C.black, { align: 'right' }));
+  nameNodes.push(await txt(p, 'за м² проекта', W - SIDE - 100, y + 18, 100, 8, 400, C.gray400, { align: 'right' }));
+  grp('name-price', nameNodes, p);
+  y += 24 + 6;
+
+  await txt(p, '📍 ' + m.city + ' · работает онлайн', SIDE, y, CW, 9, 500, C.gray400);
+  y += 9 + 16;
+
+  var tgX4 = SIDE;
+  var profileTagNodes = [];
+  for (var ti3 = 0; ti3 < m.why.length; ti3++) {
+    var tw3 = m.why[ti3].length * 6 + 20;
+    var isSel = ti3 === 0;
+    var tb = rect(p, tgX4, y, tw3, 28, isSel ? C.accent : C.gray100, 14);
+    profileTagNodes.push(tb);
+    profileTagNodes.push(await txtC(p, m.why[ti3], tgX4, y + 14, tw3, 8, 700, isSel ? C.black : C.gray600, { align: 'center' }));
+    tgX4 += tw3 + 6;
+  }
+  grp('profile-tags', profileTagNodes, p);
+  y += 28 + 18;
+
+  rect(p, 0, y, W, 1, C.gray200); y += 1 + 18;
+
+  var s3W = (CW - 12) / 3, statH = 68;
+  var stats = [{ v: m.projects, k: 'проектов' }, { v: m.exp, k: 'опыт' }, { v: '★ ' + m.rating, k: 'рейтинг' }];
+  var statsNodes = [];
+  for (var si4 = 0; si4 < 3; si4++) {
+    var sx = SIDE + si4 * (s3W + 6);
+    var sc6 = rect(p, sx, y, s3W, statH, C.white, 14);
+    sc6.strokes = [{ type: 'SOLID', color: C.gray200 }]; sc6.strokeWeight = 1;
+    statsNodes.push(sc6);
+    statsNodes.push(await txtC(p, stats[si4].v, sx + 4, y + statH / 2 - 8, s3W - 8, 14, 800, C.black, { align: 'center' }));
+    statsNodes.push(await txtC(p, stats[si4].k, sx + 4, y + statH / 2 + 10, s3W - 8, 7, 500, C.gray400, { align: 'center', ls: 3 }));
+  }
+  grp('stats', statsNodes, p);
+  y += statH + 18;
+
+  rect(p, 0, y, W, 1, C.gray200); y += 1 + 18;
+
+  await txt(p, 'РЕАЛЬНЫЕ ПРОЕКТЫ', SIDE, y, CW, 8, 700, C.gray400, { ls: 5 }); y += 8 + 12;
+  var phW = 100, phH = 76, phGap = 9;
+  var phLabels = ['Гостиная', 'Спальня', 'Кухня', 'Прихожая', 'Ванная'];
+  var photoNodes = [];
+  for (var pi = 0; pi < 5; pi++) {
+    var phX = SIDE + pi * (phW + phGap);
+    photoNodes.push(rect(p, phX, y, phW, phH, hex2rgb(m.bg[pi % m.bg.length]), 12));
+    photoNodes.push(await txt(p, phLabels[pi], phX, y + phH + 5, phW, 7, 500, C.gray400, { align: 'center' }));
+  }
+  var moreX = SIDE + 5 * (phW + phGap);
+  var moreBg = rect(p, moreX, y + phH / 2 - 18, 72, 36, C.black, 18);
+  photoNodes.push(moreBg);
+  photoNodes.push(await txtC(p, 'ещё →', moreX, y + phH / 2, 72, 8, 700, C.white, { align: 'center' }));
+  grp('projects', photoNodes, p);
+  y += phH + 22 + 12;
+
+  rect(p, 0, y, W, 1, C.gray200); y += 1 + 18;
+
+  await txt(p, 'ОТЗЫВЫ', SIDE, y, CW, 8, 700, C.gray400, { ls: 5 }); y += 8 + 12;
+  var allReviewNodes = [];
+  for (var ri = 0; ri < m.reviewsList.length; ri++) {
+    var rv = m.reviewsList[ri], revH = 102;
+    var reviewNodes = [];
+    var revCard = rect(p, SIDE, y, CW, revH, C.white, 16);
+    revCard.strokes = [{ type: 'SOLID', color: C.gray200 }]; revCard.strokeWeight = 0.5;
+    reviewNodes.push(revCard);
+    var avBg = rect(p, SIDE + 12, y + 14, 32, 32, C.black, 16); reviewNodes.push(avBg);
+    reviewNodes.push(await txtC(p, rv.av, SIDE + 12, y + 30, 32, 10, 700, C.accent, { align: 'center' }));
+    reviewNodes.push(await txt(p, rv.name + ' · ' + rv.obj, SIDE + 52, y + 14, CW - 64, 9, 700, C.black));
+    reviewNodes.push(await txt(p, rv.stars, SIDE + 52, y + 28, 70, 9, 400, C.black));
+    reviewNodes.push(await txt(p, rv.text, SIDE + 12, y + 50, CW - 24, 9, 400, C.gray400, { lineH: 14 }));
+    grp('review-' + ri, reviewNodes, p);
+    y += revH + 10;
+  }
+  y += 8;
+  rect(p, 0, y, W, 1, C.gray200); y += 1 + 18;
+
+  await txt(p, 'О МАСТЕРЕ', SIDE, y, CW, 8, 700, C.gray400, { ls: 5 }); y += 8 + 12;
+  var facts = ['Срок дизайн-проекта: 3–5 недель', '200+ клиентов по всей России', 'Первая консультация — бесплатно', 'Топ-10 Houzz Russia 2023'];
+  var factIcons = ['⏱', '👥', '🎁', '🏆'];
+  for (var fi = 0; fi < facts.length; fi++) {
+    var factRow = [];
+    var fic = rect(p, SIDE, y + fi * 42, 30, 30, C.white, 8);
+    fic.strokes = [{ type: 'SOLID', color: C.gray200 }]; fic.strokeWeight = 0.5;
+    factRow.push(fic);
+    factRow.push(await txtC(p, factIcons[fi], SIDE, y + fi * 42 + 15, 30, 15, 400, C.black, { align: 'center' }));
+    factRow.push(await txtC(p, facts[fi], SIDE + 40, y + fi * 42 + 15, CW - 40, 9, 500, C.black));
+    grp('fact-' + fi, factRow, p);
+  }
+
+  // ── CTA панель ─────────────────────────────────────────────────────────────
+  var ctaPanelNodes = [];
+  var ctaPanelBg = rect(p, 0, ctaPanelY, W, ctaPanelH, C.white);
+  ctaPanelNodes.push(ctaPanelBg);
+  ctaPanelNodes.push(rect(p, 0, ctaPanelY, W, 1, C.gray200));
+
+  var btnH = 50;
+  var innerY = ctaPanelY + (ctaPanelH - btnH) / 2;
+  var iconW = 50, gapB = 8;
+  var mainW = CW - iconW * 2 - gapB * 2;
+
+  ctaPanelNodes.push(rect(p, SIDE, innerY, mainW, btnH, C.black, 25));
+  ctaPanelNodes.push(await txtC(p, 'Написать ' + m.firstName + ' →', SIDE, innerY + btnH / 2, mainW, 10, 700, C.white, { align: 'center' }));
+
+  var saveX = SIDE + mainW + gapB;
+  var saveBtn = rect(p, saveX, innerY, iconW, btnH, C.white, 25);
+  saveBtn.strokes = [{ type: 'SOLID', color: C.gray200 }]; saveBtn.strokeWeight = 1;
+  ctaPanelNodes.push(saveBtn);
+  ctaPanelNodes.push(await txtC(p, '☆', saveX, innerY + btnH / 2, iconW, 18, 400, C.black, { align: 'center' }));
+
+  var shareX = saveX + iconW + gapB;
+  var shareBtn = rect(p, shareX, innerY, iconW, btnH, C.white, 25);
+  shareBtn.strokes = [{ type: 'SOLID', color: C.gray200 }]; shareBtn.strokeWeight = 1;
+  ctaPanelNodes.push(shareBtn);
+  ctaPanelNodes.push(await txtC(p, '↗', shareX, innerY + btnH / 2, iconW, 16, 600, C.black, { align: 'center' }));
+
+  grp('cta-panel', ctaPanelNodes, p);
+  homeBar(p);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// КАРТА ЭКРАНОВ
+// ─────────────────────────────────────────────────────────────────────────────
+var SCREEN_MAP = {
+  ui_kit:      { name: '00 — UI Kit',          fn: function(p) { return buildUIKit(p); } },
+  splash:      { name: '01 — Splash',           fn: function(p) { return buildSplash(p); } },
+  style_scan:  { name: '02a — Скандинавский',   fn: function(p) { return buildStyleSwipe(p, 0, 'like'); } },
+  style_min:   { name: '02b — Минимализм',      fn: function(p) { return buildStyleSwipe(p, 1, 'neutral'); } },
+  style_loft:  { name: '02c — Лофт',            fn: function(p) { return buildStyleSwipe(p, 2, 'nope'); } },
+  style_mod:   { name: '02d — Современный',     fn: function(p) { return buildStyleSwipe(p, 3, 'neutral'); } },
+  style_class: { name: '02e — Классика',        fn: function(p) { return buildStyleSwipe(p, 4, 'like'); } },
+  style_eco:   { name: '02f — Эко/Бохо',        fn: function(p) { return buildStyleSwipe(p, 5, 'neutral'); } },
+  style_japdi: { name: '02g — Japandi',         fn: function(p) { return buildStyleSwipe(p, 6, 'nope'); } },
+  style_art:   { name: '02h — Арт-деко',        fn: function(p) { return buildStyleSwipe(p, 7, 'like'); } },
+  behavior:    { name: '03 — Поведение',        fn: function(p) { return buildBehavior(p); } },
+  budget:      { name: '04 — Бюджет',           fn: function(p) { return buildBudget(p); } },
+  area:        { name: '05 — Площадь',          fn: function(p) { return buildArea(p); } },
+  features:    { name: '06 — Критерии',         fn: function(p) { return buildFeatures(p); } },
+  result_1:    { name: '07a — Карточка Анны',   fn: function(p) { return buildResult(p, 0); } },
+  result_2:    { name: '07b — Карточка Максима', fn: function(p) { return buildResult(p, 1); } },
+  result_3:    { name: '07c — Карточка Елены',  fn: function(p) { return buildResult(p, 2); } },
+  profile_1:   { name: '08a — Профиль Анны',    fn: function(p) { return buildProfile(p, 0); } },
+  profile_2:   { name: '08b — Профиль Максима', fn: function(p) { return buildProfile(p, 1); } },
+  profile_3:   { name: '08c — Профиль Елены',   fn: function(p) { return buildProfile(p, 2); } }
 };
 
-async function buildScreen(container,name,fn,sx,sy,fw,fh) {
-  fw=fw||W; fh=fh||H;
-  var f=figma.createFrame();
-  f.name=name; f.x=sx; f.y=sy;
-  f.resize(fw,fh);
-  f.clipsContent=true;
-  sf(f,C.white);
-  container.appendChild(f);
-  await fn(f);
-  return f;
-}
-
-figma.ui.onmessage=async function(msg){
-  if (msg.type!=='create-screens') return;
+// ─────────────────────────────────────────────────────────────────────────────
+// ГЛАВНЫЙ ЦИКЛ
+// ─────────────────────────────────────────────────────────────────────────────
+figma.ui.onmessage = async function(msg) {
+  if (msg.type !== 'create-screens') return;
   try {
-    var screens=msg.screens,layout=msg.layout,gap=msg.gap;
-    var phoneScreens=screens.filter(function(s){return s!=='ui_kit';});
-    var hasUIKit=screens.indexOf('ui_kit')!==-1;
-    var COLS=layout==='grid'?4:layout==='vertical'?1:phoneScreens.length;
-    var rows=Math.ceil(phoneScreens.length/Math.max(COLS,1));
-    var totW=Math.max(COLS*(W+gap)+gap,hasUIKit?1200+gap*2:0);
-    var totH=(hasUIKit?980+gap:0)+rows*(H+gap)+gap;
-    var container=figma.createFrame();
-    container.name='ReMatch — Онбординг v6';
-    sf(container,C.bg);
-    container.resize(totW,totH);
-    container.x=0; container.y=0;
+    var screens = msg.screens, layout = msg.layout, gap = msg.gap;
+    var phoneScreens = screens.filter(function(s) { return s !== 'ui_kit'; });
+    var hasUIKit = screens.indexOf('ui_kit') !== -1;
+
+    var bw = bodyW(), bh = bodyH();
+    var COLS = layout === 'grid' ? 4 : layout === 'vertical' ? 1 : phoneScreens.length;
+    var rows = Math.ceil(phoneScreens.length / Math.max(COLS, 1));
+    var cellW = bw + gap, cellH = bh + gap;
+    var uiKitW = 1440, uiKitH = 2600;
+    var totW = Math.max(COLS * cellW + gap, hasUIKit ? uiKitW + gap * 2 : 0);
+    var totH = (hasUIKit ? uiKitH + gap : 0) + rows * cellH + gap;
+
+    var container = figma.createFrame();
+    container.name = 'ReMatch — Онбординг v15';
+    sf(container, C.bg);
+    container.resize(totW, totH);
+    container.x = 0; container.y = 0;
     figma.currentPage.appendChild(container);
-    var offsetY=0;
-    if (hasUIKit){
-      figma.ui.postMessage({type:'progress',pct:5,label:'UI Kit'});
-      await buildScreen(container,'00 — UI Kit',buildUIKit,gap,gap,1200,980);
-      offsetY=980+gap;
+
+    var offsetY = 0;
+    if (hasUIKit) {
+      figma.ui.postMessage({ type: 'progress', pct: 3, label: 'UI Kit...' });
+      var uk = figma.createFrame();
+      uk.name = '00 — UI Kit'; uk.x = gap; uk.y = gap;
+      uk.resize(uiKitW, uiKitH); uk.clipsContent = true; sf(uk, C.bg);
+      container.appendChild(uk);
+      await buildUIKit(uk);
+      offsetY = uiKitH + gap;
     }
-    for (var i=0;i<phoneScreens.length;i++){
-      var def=SCREEN_MAP[phoneScreens[i]];
+
+    for (var i = 0; i < phoneScreens.length; i++) {
+      var def = SCREEN_MAP[phoneScreens[i]];
       if (!def) continue;
-      var col=layout==='vertical'?0:layout==='horizontal'?i:i%COLS;
-      var row=layout==='horizontal'?0:layout==='vertical'?i:Math.floor(i/COLS);
-      figma.ui.postMessage({type:'progress',pct:5+Math.round((i/phoneScreens.length)*92),label:'Создаю: '+def.name});
-      await buildScreen(container,def.name,def.fn,gap+col*(W+gap),offsetY+gap+row*(H+gap),def.w,def.h);
+      var col = layout === 'vertical' ? 0 : layout === 'horizontal' ? i : i % COLS;
+      var row = layout === 'horizontal' ? 0 : layout === 'vertical' ? i : Math.floor(i / COLS);
+      figma.ui.postMessage({ type: 'progress', pct: 3 + Math.round((i / phoneScreens.length) * 94), label: 'Создаю: ' + def.name });
+
+      var phoneX = gap + col * cellW;
+      var phoneY = offsetY + gap + row * cellH;
+      var pos = await drawPhone(container, phoneX, phoneY);
+
+      var f = figma.createFrame();
+      f.name = def.name; f.x = pos.screenX; f.y = pos.screenY;
+      f.resize(W, H); f.clipsContent = true; f.cornerRadius = PHONE.screenR;
+      sf(f, C.white);
+      container.appendChild(f);
+      await def.fn(f);
+
+      drawDynamicIsland(container, pos);
     }
+
     figma.viewport.scrollAndZoomIntoView([container]);
-    figma.ui.postMessage({type:'done',count:screens.length});
-  } catch(err){
-    figma.ui.postMessage({type:'error',message:err.message});
+    figma.ui.postMessage({ type: 'done', count: screens.length });
+  } catch (err) {
+    figma.ui.postMessage({ type: 'error', message: err.message });
     console.error(err);
   }
 };
