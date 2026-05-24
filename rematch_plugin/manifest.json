@@ -1,6 +1,6 @@
 {
-  "name": "ReMatch Screens Import",
-  "id": "rematch-screens-import",
+  "name": "ReMatch",
+  "id": "rematch-plugin",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
